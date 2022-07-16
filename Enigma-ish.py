@@ -25,52 +25,106 @@ Date          Version     Author         Description
 15/05/2022    v2.2        Pete Sanders   Ammended to change the way that the initial pos is set.                                     
                                          1000 character: encode = 23.40 sec, decode = 24.86 sec
 15/05/2022    v2.3        Pete Sanders   More code improvements.
+16/05/2022    v3.0        Pete Sanders   Made as a .exe and added some front end.
         
 RECOMMENDED FUTURE IMPROVEMENTS:
     Include a reflector and pinboard to properly model enigma.
     Allow the use of additional characters.
-    Figure out how to make faster:
-        1. Find a more efficient way to set the rotor positions,
-        currently there is a bit of wasted processing coding blanks to set the rotors.
+    Figure out how to make faster
+    Allow the use of any number of rotors
+        
+Bugs:
+    
 """
 
 #%% Import modules
 import pandas as pd
-from os.path import exists
 import time
+import tkinter as tk
 
-# Rotor orders and initial positions.
-# Change this based on update from sender. or send in the following format (A1,B2,...,H8)
-# where the letter is the rotor number in positional order and the number is the
-# initial position of the corresponding rotor.
-ROIP = ['A',5,'B',9,'C',10,'D',50,'E',10,'F',40,'G',30,'H',1]
+#%% Front end stuff
+global RP
+global IT
+global OT
+global var1
+global ROIP
+global IN
+global OUT
+global ROT
+    
+# Assignes some function within tk to root
+root = tk.Tk()
 
-# Text to be encoded or decoded can be entered here either by entering text into the
-# "Text_to_be_encoded.txt" and "Text_to_be_decoded.txt"  files in the project folder,
-# or by entering text between the '' to insert as a variable.
-# Text to be encoded
-# 1000 characters
+# Sets up the encode/decode message logic
+def print_selection():
+    if var1.get() == 1:
+        l.config(text= 'Decode')
+    elif var1.get() == 0:
+        l.config(text='Encode')
 
+
+# Create text widget and specify size.
+ROT = tk.Text(root, height = 5, width = 52)
+ 
+# Create label
+lROT = tk.Label(root, text = "Rotor settings")
+lROT.config(font =("Courier", 14))
+ROT.insert(tk.END, 'A,5,B,9,C,10,D,50,E,10,F,40,G,30,H,1')
+lROT.pack()
+ROT.pack()
+
+# Create text widget and specify size.
+IN = tk.Text(root, height = 5, width = 52)
+ 
+# Create label
+lIN = tk.Label(root, text = "Input text")
+lIN.config(font =("Courier", 14))
+IN.insert(tk.END, 'Type or copy paste the text to be converted here')
+lIN.pack()
+IN.pack()
+
+# Create text widget and specify size.
+OUT = tk.Text(root, height = 5, width = 52)
+ 
+# Create label
+lOUT = tk.Label(root, text = "Output text")
+lOUT.config(font =("Courier", 14))
+OUT.insert(tk.END, 'Converted text will be displayed here')
+lOUT.pack()
+OUT.pack()
+
+# Sets up a message label
+l = tk.Label(root, bg='white', text = 'Encode')
+l.pack()
+
+# sets up a tick box
+var1 = tk.IntVar()
+c1 = tk.Checkbutton(root, text='Decode', variable = var1, onvalue=1, offvalue=0, command = print_selection)
+c1.pack()
+
+IT = IN.get(1.0, "end-1c")
+OT = OUT.get(1.0, "end-1c")
+RP = ROT.get(1.0, "end-1c")
+
+# Define Input_text, Cypher_text, and ROIP.
 Input_text = ''
-if exists("Text_to_be_encoded.txt") == True and Input_text == '':
-    Input_text = ''.join(open("Text_to_be_encoded.txt","r").readlines())
-   
-# Text to be decoded
-Cypher_text_3 = ''
-if exists("Text_to_be_encoded.txt") == True and Cypher_text_3 == '':
-    Cypher_text_3 = ''.join(open("Text_to_be_decoded.txt","r").readlines())
+Cypher_text = ''
+ROIP = ''
 
+#%% Instructions
 # Print instrustions
 print ('Instructions:', '\n',
        'Before entering any text, you will have to "set the rotors":', '\n',
-       '    - To do this ammend the "ROIP" dictionary as nessessary,', '\n',
+       '    - To do this enter the rotor letters and initial positions in the "Rotor settings" box,', '\n',
+       '    - A rotor must be entered as rotor letter and initial postion pairs, seperated by commas,', '\n',
+       '    - Exactly 8 rotors must be used,', '\n',
        '    - Rotor letters must be capitals between A and H incl.,', '\n',
        '    - A rotor letter may be used more than once,', '\n',
        '    - Initial positions can be any integer.','\n',
-       'When prompted, enter the text to be encoded in the console and press "ENTER"', '\n',
-       'If you are only decoding text just press "ENTER"', '\n',
-       'When prompted, enter the text to be decoded in the console and press "ENTER"', '\n',
-       'Decoded text will be displayed to ensure that the cypher has worked', '\n',)
+       'Enter the text to be converted in the "Input text" box', '\n',
+       'If this is cypher text also check the "Decode" box', '\n',
+       'Press "Encode/Decode"', '\n',
+       'Converted text will be displayed in the "Output text" box', '\n',)
 
 #%% Set rotor positions
 def Set_positions():    
@@ -81,7 +135,7 @@ def Set_positions():
 
 #%% Convert text
 def Convert_text():
-    global Cypher_text_3
+    global Cypher_text
     global Input_text
     
     # Convert odd values of input text to something usefull
@@ -91,7 +145,7 @@ def Convert_text():
                '':'','':'','':'','':'','':'','':'','':'','':'','':'','':'','':''}
     for key, value in Replace.items():
         Input_text = Input_text.replace(key, value)
-        Cypher_text_3 = Cypher_text_3.replace(key, value)
+        Cypher_text = Cypher_text.replace(key, value)
     
 #%% Define Rotors
 def Define_rotors():
@@ -123,7 +177,8 @@ def Encode():
     global Rotor_X
     global Cypher_text
     global Rotor_Input_2
-    
+    global Initial_Pos
+
     # Resets the rotor position
     Set_positions() 
     
@@ -150,7 +205,6 @@ def Encode():
                                              Rotor_Input_2[Rotor_X].loc[20], Rotor_Input_2[Rotor_X].loc[21], Rotor_Input_2[Rotor_X].loc[22], Rotor_Input_2[Rotor_X].loc[23], Rotor_Input_2[Rotor_X].loc[24], Rotor_Input_2[Rotor_X].loc[25], Rotor_Input_2[Rotor_X].loc[26], Rotor_Input_2[Rotor_X].loc[27], Rotor_Input_2[Rotor_X].loc[28], Rotor_Input_2[Rotor_X].loc[29],
                                              Rotor_Input_2[Rotor_X].loc[30], Rotor_Input_2[Rotor_X].loc[31], Rotor_Input_2[Rotor_X].loc[32], Rotor_Input_2[Rotor_X].loc[33], Rotor_Input_2[Rotor_X].loc[34], Rotor_Input_2[Rotor_X].loc[35], Rotor_Input_2[Rotor_X].loc[36]]})
      
-         
     while Letter_num <= Input_text_length:
       
         # Shifts the Pos value by the initial rotor position
@@ -175,7 +229,8 @@ def Encode():
             # Identifies the letter to be converted 
             Convert = Input_text_2[Letter_num - 1]
 
-            # Gets the index of the position of the letter to be converted in the Rotor df            
+            # Gets the index of the position of the letter to be converted in the Rotor df 
+            
             Cypher_Letter_Index = int(Rotor_Input_2.index[Rotor_Input_2[Rotor_X] == Convert].tolist()[0])
 
             # Returns the 'Output' from the Rotor df i.e. the converted letter        
@@ -194,11 +249,12 @@ def Encode():
         
         # Move to the next letter in the text to be encoded
         Letter_num = Letter_num + 1
-        
+               
 #%% Decode
 def Decode():
-    global Rotor_X
+    global Initial_Pos
     global Decoded_text
+    global Rotor_X
     global Rotor_Input_2
     
     Set_positions()  
@@ -238,11 +294,11 @@ def Decode():
             Rotor_Input_2 = Rotor_Input_2.merge(Rotor_Output, how = 'left', on = 'Pos') 
             
             Convert = Cypher_text_2[Letter_num - 1]
-            
+                   
             Decoded_letter_index = int(Rotor_Input_2.index[Rotor_Input_2[Rotor_X] == Convert].tolist()[0])
             
             Decoded_Letter = Rotor_Input_2.loc[Decoded_letter_index,'Output']   
-            
+    
             Decoded_text = Decoded_text + Decoded_Letter
             
             Rotor_Input_2 = Rotor_Input_2.drop(columns = ['Output'])   
@@ -253,162 +309,187 @@ def Decode():
         
         Letter_num = Letter_num + 1
             
-#%% Encode Text 
-Convert_text()
-Define_rotors()
-if Input_text == '':
-    Input_text = input('Enter text to be encoded: ')
-else:
-    print('Text to be encoded: provided elsewhere')
+#%% Encode Text
+def Encode_text():
+    global Input_text
+    global Input_text_2
+    global Initial_Pos
+    global ROIP
+        
+    Input_text = str(IT)
+    
+    Input_text = Input_text.upper()
+    
+    Convert_text()
+    Define_rotors()
+    
+    Input_text_2 = Input_text
 
-if Input_text == '':
-    Input_text = 'Trial text'
-else:
-    pass
-
-Input_text = Input_text.upper()
-Input_text_2 = Input_text
-
-Encode_start = time.time()
-# All of this could be run as a loop but i wonder if that would slow things down?
-#Rotor 1
-Initial_Pos = ROIP[1] 
-globals()['Rotor_X'] = 'Rotor_' + ROIP[0]
-Encode()
-Input_text_2 = Cypher_text
-
-#Rotor 2
-Initial_Pos = ROIP[3]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[2]
-Encode()
-Input_text_2 = Cypher_text
-
-#Rotor 3
-Initial_Pos = ROIP[5]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[4]
-Encode()
-Input_text_2 = Cypher_text
-
-#Rotor 4
-Initial_Pos = ROIP[7]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[6]
-Encode()
-Input_text_2 = Cypher_text
-
-#Rotor 5
-Initial_Pos = ROIP[9]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[8]
-Encode()
-Input_text_2 = Cypher_text
-
-#Rotor 6
-Initial_Pos = ROIP[11]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[10]
-Encode()
-Input_text_2 = Cypher_text
-
-#Rotor 7
-Initial_Pos = ROIP[13]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[12]
-Encode()
-Input_text_2 = Cypher_text
-
-#Rotor 8
-Initial_Pos = ROIP[15]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[14]
-Encode()
-Input_text_2 = Cypher_text
-
-print('Cypher text: ' + Cypher_text)
-Encode_end = time.time()
+    Encode_start = time.time()
+    # All of this could be run as a loop but i wonder if that would slow things down?
+    #Rotor 1
+    Initial_Pos = int(ROIP[1])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[0]
+    Encode()
+    Input_text_2 = Cypher_text
+    
+    #Rotor 2
+    Initial_Pos = int(ROIP[3])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[2]
+    Encode()
+    Input_text_2 = Cypher_text
+    
+    #Rotor 3
+    Initial_Pos = int(ROIP[5])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[4]
+    Encode()
+    Input_text_2 = Cypher_text
+    
+    #Rotor 4
+    Initial_Pos = int(ROIP[7])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[6]
+    Encode()
+    Input_text_2 = Cypher_text
+    
+    #Rotor 5
+    Initial_Pos = int(ROIP[9])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[8]
+    Encode()
+    Input_text_2 = Cypher_text
+    
+    #Rotor 6
+    Initial_Pos = int(ROIP[11])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[10]
+    Encode()
+    Input_text_2 = Cypher_text
+    
+    #Rotor 7
+    Initial_Pos = int(ROIP[13])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[12]
+    Encode()
+    Input_text_2 = Cypher_text
+    
+    #Rotor 8
+    Initial_Pos = int(ROIP[15])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[14]
+    Encode()
+    Input_text_2 = Cypher_text
+    
+    Encode_end = time.time()
+    
+    OT = Cypher_text
+    OUT.replace("1.0", tk.END, OUT.get("1.0", tk.END).replace(OUT.get("1.0", tk.END),str(OT)))
+    
+    print("------------------------------")
+    print("Input text = " + IT)
+    print("Cypher text = " + OT)
+    print("Text length = %s characters" % (len(Cypher_text)))
+    print("Encode time = %s sec" % (Encode_end - Encode_start))
 
 #%% Decode Text
-Convert_text()
-Define_rotors()
+def Decode_text():
+    global Cypher_text
+    global Cypher_text_2
+    global Initial_Pos
+    global ROIP
 
-if Cypher_text_3 == '':
-    Cypher_text_3 = input('Enter text to be decoded: ')
-else:
-    print('Text to be decoded: provided elsewhere')
-
-if Cypher_text_3 == '':
-    Cypher_text = Cypher_text
-else:
-    Cypher_text = Cypher_text_3
-
-Cypher_text_2 = Cypher_text
-
-Decode_start = time.time()
-# All of this could be run as a loop but i wonder if that would slow things down?
-# Rotor 8
-Initial_Pos = ROIP[15]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[14]
-Decode()
-Cypher_text_2 = Decoded_text
-
-#Rotor 7
-Initial_Pos = ROIP[13]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[12]
-Decode()
-Cypher_text_2 = Decoded_text
-
-#Rotor 6
-Initial_Pos = ROIP[11]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[10]
-Decode()
-Cypher_text_2 = Decoded_text
-
-#Rotor 5
-Initial_Pos = ROIP[9]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[8]
-Decode()
-Cypher_text_2 = Decoded_text
-
-#Rotor 4
-Initial_Pos = ROIP[7]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[6]
-Decode()
-Cypher_text_2 = Decoded_text
-
-#Rotor 3
-Initial_Pos = ROIP[5]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[4]
-Decode()
-Cypher_text_2 = Decoded_text
-
-#Rotor 2
-Initial_Pos = ROIP[3]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[2]
-Decode()
-Cypher_text_2 = Decoded_text
-
-#Rotor 1
-Initial_Pos = ROIP[1]
-globals()['Rotor_X'] = 'Rotor_' + ROIP[0]
-Decode()
-Cypher_text_2 = Decoded_text
-
-print('Decoded text: ' + Decoded_text)
-Decode_end = time.time()
-
-#%% Outputs Cypher text to txt
-File_save = input('Do you want to save the outputs (Y,N): ')
-
-if File_save == 'Y' or File_save == 'y':
-    Cypher_txt = open("Cypher_text.txt","w")
-    Cypher_txt.write(Cypher_text)
-    Cypher_txt.close()
-
-    Decoded_txt = open("Decoded_text.txt","w")
-    Decoded_txt.write(Decoded_text)
-    Decoded_txt.close()
+    Cypher_text = str(IT)
     
-    print('Files saved')
+    Cypher_text = Cypher_text.upper()
     
-else:
-    print('Files not saved')
+    Convert_text()
+    Define_rotors()
+    
+    Cypher_text_2 = Cypher_text
+    
+    Decode_start = time.time()
+    # All of this could be run as a loop but i wonder if that would slow things down?
+    # If it was run as a loop it could be programmed so that any number of rotors could be used.
+    # Rotor 8
+    Initial_Pos = int(ROIP[15])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[14]
+    Decode()
+    Cypher_text_2 = Decoded_text
+    
+    #Rotor 7
+    Initial_Pos = int(ROIP[13])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[12]
+    Decode()
+    Cypher_text_2 = Decoded_text
+    
+    #Rotor 6
+    Initial_Pos = int(ROIP[11])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[10]
+    Decode()
+    Cypher_text_2 = Decoded_text
+    
+    #Rotor 5
+    Initial_Pos = int(ROIP[9])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[8]
+    Decode()
+    Cypher_text_2 = Decoded_text
+    
+    #Rotor 4
+    Initial_Pos = int(ROIP[7])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[6]
+    Decode()
+    Cypher_text_2 = Decoded_text
+    
+    #Rotor 3
+    Initial_Pos = int(ROIP[5])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[4]
+    Decode()
+    Cypher_text_2 = Decoded_text
+    
+    #Rotor 2
+    Initial_Pos = int(ROIP[3])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[2]
+    Decode()
+    Cypher_text_2 = Decoded_text
+    
+    #Rotor 1
+    Initial_Pos = int(ROIP[1])
+    globals()['Rotor_X'] = 'Rotor_' + ROIP[0]
+    Decode()
+    Cypher_text_2 = Decoded_text
+    
+    Decode_end = time.time()
+    
+    OT = Decoded_text
+    OUT.replace("1.0", tk.END, OUT.get("1.0", tk.END).replace(OUT.get("1.0", tk.END),str(OT)))
+    
+    print("------------------------------")
+    print("Cypher text = " + IT)
+    print("Decoded text = " + OT)
+    print("Text length = %s characters" % (len(Decoded_text)))
+    print("Decode time = %s sec" % (Decode_end - Decode_start))
 
-print("Encode length = %s characters" % (len(Cypher_text))) 
-print("Encode time = %s sec" % (Encode_end - Encode_start)) 
-print("Decode length = %s characters" % (len(Decoded_text)))    
-print("Decode time = %s sec" % (Decode_end - Decode_start))
+#%% The big red button
+   
+# The function called by a button click
+def hello():
+    global RP
+    global IT
+    global var1
+    global ROT
+    global ROIP
+    global IN
+    
+    IT = IN.get(1.0, "end-1c")
+    RP = ROT.get(1.0, "end-1c")
+    ROIP = list(RP.split(','))
+    
+    if var1.get() == 0:
+        Encode_text()
+    elif var1.get() == 1:
+        Decode_text()
+        
+label1 = tk.Label(root, text= 'Done', fg='green', font=('helvetica', 12, 'bold'))
+label1.pack()
+                
+# Describes the button and what function it runs    
+button1 = tk.Button(root, text = 'Encode/Decode' ,command = hello, bg='brown',fg='white')
+button1.pack()
+
+# No idea what this does but its  important.
+root.mainloop()
