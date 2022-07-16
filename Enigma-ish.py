@@ -14,27 +14,36 @@ FUNCTIONS:
 UPDATE RECORD:
 Date          Version     Author         Description
 03/05/2021    v1.0        Pete Sanders   Created
+05/05/2022    v2.0        Pete Sanders   Ammended so that rotors and initial positions
+                                         can be set using a single dictionary.
                                          
 RECOMMENDED FUTURE IMPROVEMENTS:
     Include a reflector and pinboard to properly model enigma.
-    Check to see if input text is alphanumeric with spaces.
+    Perform a check to see if input text is alphanumeric with spaces.
+    Have code read input file and output cypht to txt file.
+    Allow the use of additional characters.
 """
 
 #%% Import modules
 import pandas as pd
 
+# Rotor orders and initial positions.
+# Change this based on update from sender. or send in the following format (A1,B2,...,H8)
+# where the letter is the rotor number in positional order and the number is the
+# initial position of the corresponding rotor.
+ROIP = ['A',5,'B',9,'C',10,'D',50,'E',10,'F',40,'G',30,'H',1]
+
 # Print instrustions
 print ('Instructions:', '\n',
        'Before entering any text, you will have to "set the rotors":', '\n',
-       '    To do this ensure that the rotors, and their initial positions in the "Encode Text",', '\n',
-       '    and "Decode Text", sections are the same.', '\n',
-       '    The rotors in the decode text section should be in reverse order.', '\n',   
+       '    - To do this ammend the "ROIP" dictionary as nessessary,', '\n',
+       '    - Rotor letters must be capitals between A and H inclusive,', '\n',
+       '    - A rotor letter may be used more than once,', '\n',
+       '    - Initial positions can be any integer.'
        'When prompted, enter the text to be encoded in the console and press "ENTER"', '\n',
        'If you are only decoding text just press "ENTER"', '\n',
        'When prompted, enter the text to be decoded in the console and press "ENTER"', '\n',
        'Decoded text will be displayed to ensure that the cypher has worked', '\n',)
-
-Initial_Pos = 0
 
 #%% Set rotor positions
 def Set_positions():    
@@ -932,44 +941,46 @@ else:
 Input_text = Input_text.upper()
 Input_text_2 = Input_text
 
+
+
 #Rotor 1
-Initial_Pos = 5
-Rotor_A_Encode()
+Initial_Pos = ROIP[1] 
+globals()['Rotor_'+ ROIP[0] + '_Encode']()
 Input_text_2 = Cypher_text
 
 #Rotor 2
-Initial_Pos = 9
-Rotor_B_Encode()
+Initial_Pos = ROIP[3]
+globals()['Rotor_'+ ROIP[2] + '_Encode']()
 Input_text_2 = Cypher_text
 
 #Rotor 3
-Initial_Pos = 10
-Rotor_C_Encode()
+Initial_Pos = ROIP[5]
+globals()['Rotor_'+ ROIP[4] + '_Encode']()
 Input_text_2 = Cypher_text
 
 #Rotor 4
-Initial_Pos = 50
-Rotor_D_Encode()
+Initial_Pos = ROIP[7]
+globals()['Rotor_'+ ROIP[6] + '_Encode']()
 Input_text_2 = Cypher_text
 
 #Rotor 5
-Initial_Pos = 10
-Rotor_E_Encode()
+Initial_Pos = ROIP[9]
+globals()['Rotor_'+ ROIP[8] + '_Encode']()
 Input_text_2 = Cypher_text
 
 #Rotor 6
-Initial_Pos = 40
-Rotor_F_Encode()
+Initial_Pos = ROIP[11]
+globals()['Rotor_'+ ROIP[10] + '_Encode']()
 Input_text_2 = Cypher_text
 
 #Rotor 7
-Initial_Pos = 30
-Rotor_G_Encode()
+Initial_Pos = ROIP[13]
+globals()['Rotor_'+ ROIP[12] + '_Encode']()
 Input_text_2 = Cypher_text
 
 #Rotor 8
-Initial_Pos = 1
-Rotor_H_Encode()
+Initial_Pos = ROIP[15]
+globals()['Rotor_'+ ROIP[14] + '_Encode']()
 Input_text_2 = Cypher_text
 
 print('Cypher text: ' + Cypher_text)
@@ -986,43 +997,43 @@ else:
 Cypher_text_2 = Cypher_text
 
 #Rotor 8
-Initial_Pos = 1
-Rotor_H_Decode()
+Initial_Pos = ROIP[15]
+globals()['Rotor_'+ ROIP[14] + '_Decode']()
 Cypher_text_2 = Decoded_text
 
 #Rotor 7
-Initial_Pos = 30
-Rotor_G_Decode()
+Initial_Pos = ROIP[13]
+globals()['Rotor_'+ ROIP[12] + '_Decode']()
 Cypher_text_2 = Decoded_text
 
 #Rotor 6
-Initial_Pos = 40
-Rotor_F_Decode()
+Initial_Pos = ROIP[11]
+globals()['Rotor_'+ ROIP[10] + '_Decode']()
 Cypher_text_2 = Decoded_text
 
 #Rotor 5
-Initial_Pos = 10
-Rotor_E_Decode()
+Initial_Pos = ROIP[9]
+globals()['Rotor_'+ ROIP[8]+ '_Decode']()
 Cypher_text_2 = Decoded_text
 
 #Rotor 4
-Initial_Pos = 50
-Rotor_D_Decode()
+Initial_Pos = ROIP[7]
+globals()['Rotor_'+ ROIP[6] + '_Decode']()
 Cypher_text_2 = Decoded_text
 
 #Rotor 3
-Initial_Pos = 10
-Rotor_C_Decode()
+Initial_Pos = ROIP[5]
+globals()['Rotor_'+ ROIP[4] + '_Decode']()
 Cypher_text_2 = Decoded_text
 
 #Rotor 2
-Initial_Pos = 9
-Rotor_B_Decode()
+Initial_Pos = ROIP[3]
+globals()['Rotor_'+ ROIP[2] + '_Decode']()
 Cypher_text_2 = Decoded_text
 
 #Rotor 1
-Initial_Pos = 5
-Rotor_A_Decode()
+Initial_Pos = ROIP[1]
+globals()['Rotor_'+ ROIP[0] + '_Decode']()
 Cypher_text_2 = Decoded_text
 
 print('Decoded text: ' + Decoded_text)
