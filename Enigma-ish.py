@@ -8,24 +8,33 @@ DESCRIPTION:
 FUNCTIONS:
     Set_positions()
     Define_rotors()
-    Rotor_A-H_Encode()
-    Rotor_A-H_Decode()
-    
+    Encode()
+    Decode()
+    Convert_text()
+
 UPDATE RECORD:
 Date          Version     Author         Description
 03/05/2021    v1.0        Pete Sanders   Created
 05/05/2022    v2.0        Pete Sanders   Ammended so that rotors and initial positions
-                                         can be set using a single dictionary.
+                                         can be set using a single dictionary. Ammended
+                                         so that multiple inputs can be used, txt file or 
+                                         variable in script.
+06/05/2022    v2.1        Pete Sanders   Ammended to convert non-recognised characters to
+                                         something recognisable. Made code more efficient.
+                                         1000 character: encode = 28.63 sec, decode = 33.91 sec
                                          
 RECOMMENDED FUTURE IMPROVEMENTS:
     Include a reflector and pinboard to properly model enigma.
-    Perform a check to see if input text is alphanumeric with spaces.
-    Have code read input file and output cypht to txt file.
     Allow the use of additional characters.
+    Figure out how to make faster:
+        1. Find a more efficient way to set the rotor positions,
+        currently there is a bit of wasted processing coding blanks to set the rotors.
 """
 
 #%% Import modules
 import pandas as pd
+from os.path import exists
+import time
 
 # Rotor orders and initial positions.
 # Change this based on update from sender. or send in the following format (A1,B2,...,H8)
@@ -33,13 +42,28 @@ import pandas as pd
 # initial position of the corresponding rotor.
 ROIP = ['A',5,'B',9,'C',10,'D',50,'E',10,'F',40,'G',30,'H',1]
 
+# Text to be encoded or decoded can be entered here either by entering text into the
+# "Text_to_be_encoded.txt" and "Text_to_be_decoded.txt"  files in the project folder,
+# or by entering text between the '' to insert as a variable.
+# Text to be encoded
+# 1000 characters
+
+Input_text = ''
+if exists("Text_to_be_encoded.txt") == True and Input_text == '':
+    Input_text = ''.join(open("Text_to_be_encoded.txt","r").readlines())
+   
+# Text to be decoded
+Cypher_text_3 = ''
+if exists("Text_to_be_encoded.txt") == True and Cypher_text_3 == '':
+    Cypher_text_3 = ''.join(open("Text_to_be_decoded.txt","r").readlines())
+
 # Print instrustions
 print ('Instructions:', '\n',
        'Before entering any text, you will have to "set the rotors":', '\n',
        '    - To do this ammend the "ROIP" dictionary as nessessary,', '\n',
-       '    - Rotor letters must be capitals between A and H inclusive,', '\n',
+       '    - Rotor letters must be capitals between A and H incl.,', '\n',
        '    - A rotor letter may be used more than once,', '\n',
-       '    - Initial positions can be any integer.'
+       '    - Initial positions can be any integer.','\n',
        'When prompted, enter the text to be encoded in the console and press "ENTER"', '\n',
        'If you are only decoding text just press "ENTER"', '\n',
        'When prompted, enter the text to be decoded in the console and press "ENTER"', '\n',
@@ -49,15 +73,28 @@ print ('Instructions:', '\n',
 def Set_positions():    
     global Pos
 
-#This dictionary sets the rotor values and allows the positions of the Rotor_Outputs to be changed    
+    #This dictionary sets the rotor values and allows the positions of the Rotor_Outputs to be changed    
     Pos = dict([(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9), (10, 10),
                   (11, 11), (12, 12), (13, 13), (14, 14), (15, 15), (16, 16), (17, 17), (18, 18), (19, 19), (20, 20),
                   (21, 21), (22, 22), (23, 23), (24, 24), (25, 25), (26, 26), (27, 27), (28, 28), (29, 29), (30, 30),
-                  (31, 31), (32, 32), (33, 33), (34, 34), (35, 35), (36, 36), (37, 37)]) 
+                  (31, 31), (32, 32), (33, 33), (34, 34), (35, 35), (36, 36), (37, 37)])
 
+#%% Convert text
+def Convert_text():
+    global Cypher_text_3
+    global Input_text
+    
+    # Convert odd values of input text to something usefull
+    Replace = {'\n':' ','!':'','@': 'AT','#':'','$':'','%':'','^':'','&':'','*':'',
+               '(':'',')':'','_':'','.':' STOP','?':'',',':'','/':'','|':'','[':'',
+               ']':'','{':'','}':'','<':'','>':'',':':'',';':'','':'','':'','':'','':'',
+               '':'','':'','':'','':'','':'','':'','':'','':'','':'','':'','':''}
+    for key, value in Replace.items():
+        Input_text = Input_text.replace(key, value)
+        Cypher_text_3 = Cypher_text_3.replace(key, value)
+    
 #%% Define Rotors
 def Define_rotors():
-
     global Rotor_A
     global Rotor_B
     global Rotor_C
@@ -66,17 +103,9 @@ def Define_rotors():
     global Rotor_F
     global Rotor_G
     global Rotor_H
+    global Rotor_X
     
-    global Rotor_A_Ref
-    global Rotor_B_Ref
-    global Rotor_C_Ref
-    global Rotor_D_Ref
-    global Rotor_E_Ref
-    global Rotor_F_Ref
-    global Rotor_G_Ref
-    global Rotor_H_Ref
-    
-#Dictionaries that describe the mapping of each rotor.
+    # The following dictionaries describe the mapping of each rotor i.e. the letter that appears at position x on the rotor.
     Rotor_A = dict([(37, 'K'), (2, 'L'), (3, 'M'), (4, 'N'), (5, 'O'), (6, 'P'), (7, 'Q'), (8, 'R'), (9, 'S'), (10, 'J'),
                     (11, 'A'), (12, 'B'), (23, 'C'), (14, 'D'), (15, 'E'), (16, 'F'), (17, 'G'), (18, 'H'), (19, 'I'), (30, '4'),
                     (21, '5'), (22, '6'), (13, '7'), (24, '8'), (25, '9'), (26, '0'), (27, ' '), (28, '2'), (29, '3'), (20, 'T'),
@@ -119,114 +148,79 @@ def Define_rotors():
                     (21, 'U'), (22, 'V'), (23, 'W'), (24, 'X'), (25, 'Y'), (26, 'Z'), (27, '1'), (28, '2'), (29, '3'), (30, '4'),
                     (31, '5'), (32, '6'), (33, '7'), (34, '8'), (35, '9'), (36, '0'), (37, ' ')])
 
-#References for each rotor, reference rotors have fixed positions.
-    Rotor_A_Ref = pd.DataFrame ({'Pos':[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
-                                    14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-                                    25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-                                    36, 37],
-                                 'Input':[Rotor_A[1], Rotor_A[2], Rotor_A[3], Rotor_A[4], Rotor_A[5], Rotor_A[6], Rotor_A[7], Rotor_A[8], Rotor_A[9], Rotor_A[10],
-                                        Rotor_A[11], Rotor_A[12], Rotor_A[13], Rotor_A[14], Rotor_A[15], Rotor_A[16], Rotor_A[17], Rotor_A[18], Rotor_A[19], Rotor_A[20],
-                                        Rotor_A[21], Rotor_A[22], Rotor_A[23], Rotor_A[24], Rotor_A[25], Rotor_A[26], Rotor_A[27], Rotor_A[28], Rotor_A[29], Rotor_A[30],
-                                        Rotor_A[31], Rotor_A[32], Rotor_A[33], Rotor_A[34], Rotor_A[35], Rotor_A[36], Rotor_A[37]]})
-    
-    Rotor_B_Ref = pd.DataFrame ({'Pos':[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
-                                    14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-                                    25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-                                    36, 37],
-                                 'Input':[Rotor_B[1], Rotor_B[2], Rotor_B[3], Rotor_B[4], Rotor_B[5], Rotor_B[6], Rotor_B[7], Rotor_B[8], Rotor_B[9], Rotor_B[10],
-                                        Rotor_B[11], Rotor_B[12], Rotor_B[13], Rotor_B[14], Rotor_B[15], Rotor_B[16], Rotor_B[17], Rotor_B[18], Rotor_B[19], Rotor_B[20],
-                                        Rotor_B[21], Rotor_B[22], Rotor_B[23], Rotor_B[24], Rotor_B[25], Rotor_B[26], Rotor_B[27], Rotor_B[28], Rotor_B[29], Rotor_B[30],
-                                        Rotor_B[31], Rotor_B[32], Rotor_B[33], Rotor_B[34], Rotor_B[35], Rotor_B[36], Rotor_B[37]]})    
-    
-    Rotor_C_Ref = pd.DataFrame ({'Pos':[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
-                                    14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-                                    25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-                                    36, 37],
-                                 'Input':[Rotor_C[1], Rotor_C[2], Rotor_C[3], Rotor_C[4], Rotor_C[5], Rotor_C[6], Rotor_C[7], Rotor_C[8], Rotor_C[9], Rotor_C[10],
-                                        Rotor_C[11], Rotor_C[12], Rotor_C[13], Rotor_C[14], Rotor_C[15], Rotor_C[16], Rotor_C[17], Rotor_C[18], Rotor_C[19], Rotor_C[20],
-                                        Rotor_C[21], Rotor_C[22], Rotor_C[23], Rotor_C[24], Rotor_C[25], Rotor_C[26], Rotor_C[27], Rotor_C[28], Rotor_C[29], Rotor_C[30],
-                                        Rotor_C[31], Rotor_C[32], Rotor_C[33], Rotor_C[34], Rotor_C[35], Rotor_C[36], Rotor_C[37]]})
-
-    Rotor_D_Ref = pd.DataFrame ({'Pos':[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
-                                    14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-                                    25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-                                    36, 37],
-                                 'Input':[Rotor_D[1], Rotor_D[2], Rotor_D[3], Rotor_D[4], Rotor_D[5], Rotor_D[6], Rotor_D[7], Rotor_D[8], Rotor_D[9], Rotor_D[10],
-                                        Rotor_D[11], Rotor_D[12], Rotor_D[13], Rotor_D[14], Rotor_D[15], Rotor_D[16], Rotor_D[17], Rotor_D[18], Rotor_D[19], Rotor_D[20],
-                                        Rotor_D[21], Rotor_D[22], Rotor_D[23], Rotor_D[24], Rotor_D[25], Rotor_D[26], Rotor_D[27], Rotor_D[28], Rotor_D[29], Rotor_D[30],
-                                        Rotor_D[31], Rotor_D[32], Rotor_D[33], Rotor_D[34], Rotor_D[35], Rotor_D[36], Rotor_D[37]]})
-    
-    Rotor_E_Ref = pd.DataFrame ({'Pos':[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
-                                    14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-                                    25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-                                    36, 37],
-                                 'Input':[Rotor_E[1], Rotor_E[2], Rotor_E[3], Rotor_E[4], Rotor_E[5], Rotor_E[6], Rotor_E[7], Rotor_E[8], Rotor_E[9], Rotor_E[10],
-                                        Rotor_E[11], Rotor_E[12], Rotor_E[13], Rotor_E[14], Rotor_E[15], Rotor_E[16], Rotor_E[17], Rotor_E[18], Rotor_E[19], Rotor_E[20],
-                                        Rotor_E[21], Rotor_E[22], Rotor_E[23], Rotor_E[24], Rotor_E[25], Rotor_E[26], Rotor_E[27], Rotor_E[28], Rotor_E[29], Rotor_E[30],
-                                        Rotor_E[31], Rotor_E[32], Rotor_E[33], Rotor_E[34], Rotor_E[35], Rotor_E[36], Rotor_E[37]]})
-
-    Rotor_F_Ref = pd.DataFrame ({'Pos':[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
-                                    14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-                                    25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-                                    36, 37],
-                                 'Input':[Rotor_F[1], Rotor_F[2], Rotor_F[3], Rotor_F[4], Rotor_F[5], Rotor_F[6], Rotor_F[7], Rotor_F[8], Rotor_F[9], Rotor_F[10],
-                                        Rotor_F[11], Rotor_F[12], Rotor_F[13], Rotor_F[14], Rotor_F[15], Rotor_F[16], Rotor_F[17], Rotor_F[18], Rotor_F[19], Rotor_F[20],
-                                        Rotor_F[21], Rotor_F[22], Rotor_F[23], Rotor_F[24], Rotor_F[25], Rotor_F[26], Rotor_F[27], Rotor_F[28], Rotor_F[29], Rotor_F[30],
-                                        Rotor_F[31], Rotor_F[32], Rotor_F[33], Rotor_F[34], Rotor_F[35], Rotor_F[36], Rotor_F[37]]})
-
-    Rotor_G_Ref = pd.DataFrame ({'Pos':[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
-                                    14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-                                    25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-                                    36, 37],
-                                 'Input':[Rotor_G[1], Rotor_G[2], Rotor_G[3], Rotor_G[4], Rotor_G[5], Rotor_G[6], Rotor_G[7], Rotor_G[8], Rotor_G[9], Rotor_G[10],
-                                        Rotor_G[11], Rotor_G[12], Rotor_G[13], Rotor_G[14], Rotor_G[15], Rotor_G[16], Rotor_G[17], Rotor_G[18], Rotor_G[19], Rotor_G[20],
-                                        Rotor_G[21], Rotor_G[22], Rotor_G[23], Rotor_G[24], Rotor_G[25], Rotor_G[26], Rotor_G[27], Rotor_G[28], Rotor_G[29], Rotor_G[30],
-                                        Rotor_G[31], Rotor_G[32], Rotor_G[33], Rotor_G[34], Rotor_G[35], Rotor_G[36], Rotor_G[37]]})
-
-    Rotor_H_Ref = pd.DataFrame ({'Pos':[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
-                                    14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-                                    25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-                                    36, 37],
-                                 'Input':[Rotor_H[1], Rotor_H[2], Rotor_H[3], Rotor_H[4], Rotor_H[5], Rotor_H[6], Rotor_H[7], Rotor_H[8], Rotor_H[9], Rotor_H[10],
-                                        Rotor_H[11], Rotor_H[12], Rotor_H[13], Rotor_H[14], Rotor_H[15], Rotor_H[16], Rotor_H[17], Rotor_H[18], Rotor_H[19], Rotor_H[20],
-                                        Rotor_H[21], Rotor_H[22], Rotor_H[23], Rotor_H[24], Rotor_H[25], Rotor_H[26], Rotor_H[27], Rotor_H[28], Rotor_H[29], Rotor_H[30],
-                                        Rotor_H[31], Rotor_H[32], Rotor_H[33], Rotor_H[34], Rotor_H[35], Rotor_H[36], Rotor_H[37]]})
-
-#%% Encode text, each rotor is encoded seperately
-def Rotor_A_Encode():
-
-    Set_positions()    
-
+#%% Encode
+def Encode():
+    global Rotor_X
     global Cypher_text
-    Input_text_length = len(Input_text)
-    Letter_num = Initial_Pos * -1
     
+    # Resets the rotor position
+    Set_positions() 
+    
+    # Define length of text to be decoded
+    Input_text_length = len(Input_text)
+    
+    Letter_num = 0
+    
+    # This bit loops round the pos until it reaches the initial position.
+    A = 0
+    while A < Initial_Pos:
+        x = 1
+        while x < 38:
+            if Pos[x] + 1 == 38:
+                Pos[x] = 1
+            else:
+                Pos[x] = Pos[x] + 1 
+            x = x + 1
+        A = A + 1
+
+    # Resets the cypher text given that anything being encoded will be the new cypher text
     Cypher_text = ""
-          
+         
     while Letter_num <= Input_text_length:
 
-#Rotor_Outputs (poor name) have mutable positions, and therefore move 'against' the rotor references to produce a different output.
-#Both Rotor_Outputs and reference rotors 'look' at the same rotor dictionary.        
+        # Define rotor inputs and outputs, these will be the letters that are encoded from the rotor.
+        # This is just the same as the Rotor_X_ref data frames, I imagine this could be improved
+        Rotor_Input = pd.DataFrame ({'Pos':[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+                                    14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+                                    25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+                                    36, 37],
+                                    'Input':[globals()[Rotor_X][1], globals()[Rotor_X][2], globals()[Rotor_X][3], globals()[Rotor_X][4], globals()[Rotor_X][5], globals()[Rotor_X][6], globals()[Rotor_X][7], globals()[Rotor_X][8], globals()[Rotor_X][9], globals()[Rotor_X][10],
+                                        globals()[Rotor_X][11], globals()[Rotor_X][12], globals()[Rotor_X][13], globals()[Rotor_X][14], globals()[Rotor_X][15], globals()[Rotor_X][16], globals()[Rotor_X][17], globals()[Rotor_X][18], globals()[Rotor_X][19], globals()[Rotor_X][20],
+                                        globals()[Rotor_X][21], globals()[Rotor_X][22], globals()[Rotor_X][23], globals()[Rotor_X][24], globals()[Rotor_X][25], globals()[Rotor_X][26], globals()[Rotor_X][27], globals()[Rotor_X][28], globals()[Rotor_X][29], globals()[Rotor_X][30],
+                                        globals()[Rotor_X][31], globals()[Rotor_X][32], globals()[Rotor_X][33], globals()[Rotor_X][34], globals()[Rotor_X][35], globals()[Rotor_X][36], globals()[Rotor_X][37]]})
+        
+        
         Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
                                         Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
                                         Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
                                         Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_A[1], Rotor_A[2], Rotor_A[3], Rotor_A[4], Rotor_A[5], Rotor_A[6], Rotor_A[7], Rotor_A[8], Rotor_A[9], Rotor_A[10],
-                                        Rotor_A[11], Rotor_A[12], Rotor_A[13], Rotor_A[14], Rotor_A[15], Rotor_A[16], Rotor_A[17], Rotor_A[18], Rotor_A[19], Rotor_A[20],
-                                        Rotor_A[21], Rotor_A[22], Rotor_A[23], Rotor_A[24], Rotor_A[25], Rotor_A[26], Rotor_A[27], Rotor_A[28], Rotor_A[29], Rotor_A[30],
-                                        Rotor_A[31], Rotor_A[32], Rotor_A[33], Rotor_A[34], Rotor_A[35], Rotor_A[36], Rotor_A[37]]})
+                                      'Output':[globals()[Rotor_X][1], globals()[Rotor_X][2], globals()[Rotor_X][3], globals()[Rotor_X][4], globals()[Rotor_X][5], globals()[Rotor_X][6], globals()[Rotor_X][7], globals()[Rotor_X][8], globals()[Rotor_X][9], globals()[Rotor_X][10],
+                                        globals()[Rotor_X][11], globals()[Rotor_X][12], globals()[Rotor_X][13], globals()[Rotor_X][14], globals()[Rotor_X][15], globals()[Rotor_X][16], globals()[Rotor_X][17], globals()[Rotor_X][18], globals()[Rotor_X][19], globals()[Rotor_X][20],
+                                        globals()[Rotor_X][21], globals()[Rotor_X][22], globals()[Rotor_X][23], globals()[Rotor_X][24], globals()[Rotor_X][25], globals()[Rotor_X][26], globals()[Rotor_X][27], globals()[Rotor_X][28], globals()[Rotor_X][29], globals()[Rotor_X][30],
+                                        globals()[Rotor_X][31], globals()[Rotor_X][32], globals()[Rotor_X][33], globals()[Rotor_X][34], globals()[Rotor_X][35], globals()[Rotor_X][36], globals()[Rotor_X][37]]})
         
+        # If statement ensures encoding 'starts' after the rotor positions have been set.
+        # i.e. after the blanks before the start of the text have been encoded.
         if Letter_num >= 1:
-            Rotor = Rotor_A_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Input_text_2[Letter_num - 1]]})
-        
-            Cypher_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Cypher_text = Cypher_text + Cypher_Letter.iloc[0]['Output']
+            # Merges the 'Rotor_Output' (moving) and 'Rotor_Ref' (fixed) dfs by their positional values  
+            Rotor = Rotor_Input.merge(Rotor_Output, how = 'left', on = 'Pos')  
+            
+            # Identifies the letter to be converted 
+            Convert = Input_text_2[Letter_num - 1]
+
+            # Gets the index of the position of the letter to be converted in the Rotor df            
+            Cypher_Letter_Index = int(Rotor.index[Rotor['Input'] == Convert].tolist()[0])
+
+            # Returns the 'Output' from the Rotor df i.e. the converted letter        
+            Cypher_Letter = Rotor.loc[Cypher_Letter_Index,'Output'] 
+
+            # Creates a string that concatenates all of the converted letters        
+            Cypher_text = Cypher_text + Cypher_Letter         
         else:
             pass
-        
+
+        # Shifts the "Pos" value by 1 (or loops round) which has the effect of moving the 
+        # Output column of the Rotor df up by one position but leaving the Input column in place            
         x = 1
         
         while x < 38:
@@ -237,703 +231,81 @@ def Rotor_A_Encode():
             
             x = x + 1
         
+        # Move to the next letter in the text to be encoded
         Letter_num = Letter_num + 1
 
-def Rotor_B_Encode():
-    global Cypher_text
-    Input_text_length = len(Input_text)
-    Letter_num = Initial_Pos * -1
+#%% Decode
+def Decode():
+    global Rotor_X
+    global Decoded_text
+    
+    Set_positions()  
+    
+    Cypher_text_length = len(Cypher_text)
+    
+    Letter_num = 0
 
-    Set_positions()    
-    
-    Cypher_text = ""
-      
-    while Letter_num <= Input_text_length:
-        
-        x = 1        
-        
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_B[1], Rotor_B[2], Rotor_B[3], Rotor_B[4], Rotor_B[5], Rotor_B[6], Rotor_B[7], Rotor_B[8], Rotor_B[9], Rotor_B[10],
-                                        Rotor_B[11], Rotor_B[12], Rotor_B[13], Rotor_B[14], Rotor_B[15], Rotor_B[16], Rotor_B[17], Rotor_B[18], Rotor_B[19], Rotor_B[20],
-                                        Rotor_B[21], Rotor_B[22], Rotor_B[23], Rotor_B[24], Rotor_B[25], Rotor_B[26], Rotor_B[27], Rotor_B[28], Rotor_B[29], Rotor_B[30],
-                                        Rotor_B[31], Rotor_B[32], Rotor_B[33], Rotor_B[34], Rotor_B[35], Rotor_B[36], Rotor_B[37]]})
-    
-        if Letter_num >= 1:
-            Rotor = Rotor_B_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Input_text_2[Letter_num - 1]]})
-        
-            Cypher_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Cypher_text = Cypher_text + Cypher_Letter.iloc[0]['Output']
-        else:
-            pass
-        
+    a = 0
+    while a < Initial_Pos:
         x = 1
-        
         while x < 38:
-            if Pos[x] + 1 == 38:
-                Pos[x] = 1
+            if Pos[x] - 1 == 0:
+                Pos[x] = 37
             else:
-                Pos[x] = Pos[x] + 1  
-            
+                Pos[x] = Pos[x] - 1  
             x = x + 1
-        
-        Letter_num = Letter_num + 1
-
-def Rotor_C_Encode():
-    global Cypher_text
-    Input_text_length = len(Input_text)
-    Letter_num = Initial_Pos * -1
-
-    Set_positions()    
-
+        a = a + 1
     
-    Cypher_text = ""
-      
-    while Letter_num <= Input_text_length:
-        
-        x = 1        
-        
+    Decoded_text = ""
+                
+    while Letter_num <= Cypher_text_length:
+        Rotor_Input = pd.DataFrame ({'Pos':[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+                                    14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+                                    25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+                                    36, 37],
+                                    'Input':[globals()[Rotor_X][1], globals()[Rotor_X][2], globals()[Rotor_X][3], globals()[Rotor_X][4], globals()[Rotor_X][5], globals()[Rotor_X][6], globals()[Rotor_X][7], globals()[Rotor_X][8], globals()[Rotor_X][9], globals()[Rotor_X][10],
+                                        globals()[Rotor_X][11], globals()[Rotor_X][12], globals()[Rotor_X][13], globals()[Rotor_X][14], globals()[Rotor_X][15], globals()[Rotor_X][16], globals()[Rotor_X][17], globals()[Rotor_X][18], globals()[Rotor_X][19], globals()[Rotor_X][20],
+                                        globals()[Rotor_X][21], globals()[Rotor_X][22], globals()[Rotor_X][23], globals()[Rotor_X][24], globals()[Rotor_X][25], globals()[Rotor_X][26], globals()[Rotor_X][27], globals()[Rotor_X][28], globals()[Rotor_X][29], globals()[Rotor_X][30],
+                                        globals()[Rotor_X][31], globals()[Rotor_X][32], globals()[Rotor_X][33], globals()[Rotor_X][34], globals()[Rotor_X][35], globals()[Rotor_X][36], globals()[Rotor_X][37]]})
+    
         Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
                                         Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
                                         Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
                                         Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_C[1], Rotor_C[2], Rotor_C[3], Rotor_C[4], Rotor_C[5], Rotor_C[6], Rotor_C[7], Rotor_C[8], Rotor_C[9], Rotor_C[10],
-                                        Rotor_C[11], Rotor_C[12], Rotor_C[13], Rotor_C[14], Rotor_C[15], Rotor_C[16], Rotor_C[17], Rotor_C[18], Rotor_C[19], Rotor_C[20],
-                                        Rotor_C[21], Rotor_C[22], Rotor_C[23], Rotor_C[24], Rotor_C[25], Rotor_C[26], Rotor_C[27], Rotor_C[28], Rotor_C[29], Rotor_C[30],
-                                        Rotor_C[31], Rotor_C[32], Rotor_C[33], Rotor_C[34], Rotor_C[35], Rotor_C[36], Rotor_C[37]]})
-    
+                                      'Output':[globals()[Rotor_X][1], globals()[Rotor_X][2], globals()[Rotor_X][3], globals()[Rotor_X][4], globals()[Rotor_X][5], globals()[Rotor_X][6], globals()[Rotor_X][7], globals()[Rotor_X][8], globals()[Rotor_X][9], globals()[Rotor_X][10],
+                                        globals()[Rotor_X][11], globals()[Rotor_X][12], globals()[Rotor_X][13], globals()[Rotor_X][14], globals()[Rotor_X][15], globals()[Rotor_X][16], globals()[Rotor_X][17], globals()[Rotor_X][18], globals()[Rotor_X][19], globals()[Rotor_X][20],
+                                        globals()[Rotor_X][21], globals()[Rotor_X][22], globals()[Rotor_X][23], globals()[Rotor_X][24], globals()[Rotor_X][25], globals()[Rotor_X][26], globals()[Rotor_X][27], globals()[Rotor_X][28], globals()[Rotor_X][29], globals()[Rotor_X][30],
+                                        globals()[Rotor_X][31], globals()[Rotor_X][32], globals()[Rotor_X][33], globals()[Rotor_X][34], globals()[Rotor_X][35], globals()[Rotor_X][36], globals()[Rotor_X][37]]})
+        
         if Letter_num >= 1:
-            Rotor = Rotor_C_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Input_text_2[Letter_num - 1]]})
-        
-            Cypher_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Cypher_text = Cypher_text + Cypher_Letter.iloc[0]['Output']
+            Rotor = Rotor_Input.merge(Rotor_Output, how = 'left', on = 'Pos')  
+            Convert = Cypher_text_2[Letter_num - 1]
+            Decoded_letter_index = int(Rotor.index[Rotor['Input'] == Convert].tolist()[0])
+            Decoded_Letter = Rotor.loc[Decoded_letter_index,'Output']            
+            Decoded_text = Decoded_text + Decoded_Letter
         else:
             pass
         
         x = 1
         
         while x < 38:
-            if Pos[x] + 1 == 38:
-                Pos[x] = 1
+            if Pos[x] - 1 == 0:
+                Pos[x] = 37
             else:
-                Pos[x] = Pos[x] + 1  
+                Pos[x] = Pos[x] - 1  
+            x = x + 1            
+        
+        Letter_num = Letter_num + 1
             
-            x = x + 1
-        
-        Letter_num = Letter_num + 1
-
-
-def Rotor_D_Encode():
-    global Cypher_text
-    Input_text_length = len(Input_text)
-    Letter_num = Initial_Pos * -1
-
-    Set_positions()    
-
-    
-    Cypher_text = ""
-      
-    while Letter_num <= Input_text_length:
-        
-        x = 1        
-        
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_D[1], Rotor_D[2], Rotor_D[3], Rotor_D[4], Rotor_D[5], Rotor_D[6], Rotor_D[7], Rotor_D[8], Rotor_D[9], Rotor_D[10],
-                                        Rotor_D[11], Rotor_D[12], Rotor_D[13], Rotor_D[14], Rotor_D[15], Rotor_D[16], Rotor_D[17], Rotor_D[18], Rotor_D[19], Rotor_D[20],
-                                        Rotor_D[21], Rotor_D[22], Rotor_D[23], Rotor_D[24], Rotor_D[25], Rotor_D[26], Rotor_D[27], Rotor_D[28], Rotor_D[29], Rotor_D[30],
-                                        Rotor_D[31], Rotor_D[32], Rotor_D[33], Rotor_D[34], Rotor_D[35], Rotor_D[36], Rotor_D[37]]})
-    
-        if Letter_num >= 1:
-            Rotor = Rotor_D_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Input_text_2[Letter_num - 1]]})
-        
-            Cypher_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Cypher_text = Cypher_text + Cypher_Letter.iloc[0]['Output']
-        else:
-            pass
-        
-        x = 1
-        
-        while x < 38:
-            if Pos[x] + 1 == 38:
-                Pos[x] = 1
-            else:
-                Pos[x] = Pos[x] + 1  
-            
-            x = x + 1
-        
-        Letter_num = Letter_num + 1
-
-def Rotor_E_Encode():
-    global Cypher_text
-    Input_text_length = len(Input_text)
-    Letter_num = Initial_Pos * -1
-
-    Set_positions()    
-
-    
-    Cypher_text = ""
-      
-    while Letter_num <= Input_text_length:
-        
-        x = 1        
-        
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_E[1], Rotor_E[2], Rotor_E[3], Rotor_E[4], Rotor_E[5], Rotor_E[6], Rotor_E[7], Rotor_E[8], Rotor_E[9], Rotor_E[10],
-                                        Rotor_E[11], Rotor_E[12], Rotor_E[13], Rotor_E[14], Rotor_E[15], Rotor_E[16], Rotor_E[17], Rotor_E[18], Rotor_E[19], Rotor_E[20],
-                                        Rotor_E[21], Rotor_E[22], Rotor_E[23], Rotor_E[24], Rotor_E[25], Rotor_E[26], Rotor_E[27], Rotor_E[28], Rotor_E[29], Rotor_E[30],
-                                        Rotor_E[31], Rotor_E[32], Rotor_E[33], Rotor_E[34], Rotor_E[35], Rotor_E[36], Rotor_E[37]]})
-    
-        if Letter_num >= 1:
-            Rotor = Rotor_E_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Input_text_2[Letter_num - 1]]})
-        
-            Cypher_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Cypher_text = Cypher_text + Cypher_Letter.iloc[0]['Output']
-        else:
-            pass
-        
-        x = 1
-        
-        while x < 38:
-            if Pos[x] + 1 == 38:
-                Pos[x] = 1
-            else:
-                Pos[x] = Pos[x] + 1  
-            
-            x = x + 1
-        
-        Letter_num = Letter_num + 1
-
-def Rotor_F_Encode():
-    global Cypher_text
-    Input_text_length = len(Input_text)
-    Letter_num = Initial_Pos * -1
-
-    Set_positions()    
-
-    
-    Cypher_text = ""
-      
-    while Letter_num <= Input_text_length:
-        
-        x = 1        
-        
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_F[1], Rotor_F[2], Rotor_F[3], Rotor_F[4], Rotor_F[5], Rotor_F[6], Rotor_F[7], Rotor_F[8], Rotor_F[9], Rotor_F[10],
-                                        Rotor_F[11], Rotor_F[12], Rotor_F[13], Rotor_F[14], Rotor_F[15], Rotor_F[16], Rotor_F[17], Rotor_F[18], Rotor_F[19], Rotor_F[20],
-                                        Rotor_F[21], Rotor_F[22], Rotor_F[23], Rotor_F[24], Rotor_F[25], Rotor_F[26], Rotor_F[27], Rotor_F[28], Rotor_F[29], Rotor_F[30],
-                                        Rotor_F[31], Rotor_F[32], Rotor_F[33], Rotor_F[34], Rotor_F[35], Rotor_F[36], Rotor_F[37]]})
-    
-        if Letter_num >= 1:
-            Rotor = Rotor_F_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Input_text_2[Letter_num - 1]]})
-        
-            Cypher_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Cypher_text = Cypher_text + Cypher_Letter.iloc[0]['Output']
-        else:
-            pass
-        
-        x = 1
-        
-        while x < 38:
-            if Pos[x] + 1 == 38:
-                Pos[x] = 1
-            else:
-                Pos[x] = Pos[x] + 1  
-            
-            x = x + 1
-        
-        Letter_num = Letter_num + 1
-
-def Rotor_G_Encode():
-    global Cypher_text
-    Input_text_length = len(Input_text)
-    Letter_num = Initial_Pos * -1
-    
-    Set_positions()    
-
-    
-    Cypher_text = ""
-      
-    while Letter_num <= Input_text_length:
-        
-        x = 1        
-        
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_G[1], Rotor_G[2], Rotor_G[3], Rotor_G[4], Rotor_G[5], Rotor_G[6], Rotor_G[7], Rotor_G[8], Rotor_G[9], Rotor_G[10],
-                                        Rotor_G[11], Rotor_G[12], Rotor_G[13], Rotor_G[14], Rotor_G[15], Rotor_G[16], Rotor_G[17], Rotor_G[18], Rotor_G[19], Rotor_G[20],
-                                        Rotor_G[21], Rotor_G[22], Rotor_G[23], Rotor_G[24], Rotor_G[25], Rotor_G[26], Rotor_G[27], Rotor_G[28], Rotor_G[29], Rotor_G[30],
-                                        Rotor_G[31], Rotor_G[32], Rotor_G[33], Rotor_G[34], Rotor_G[35], Rotor_G[36], Rotor_G[37]]})
-    
-        if Letter_num >= 1:
-            Rotor = Rotor_G_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Input_text_2[Letter_num - 1]]})
-        
-            Cypher_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Cypher_text = Cypher_text + Cypher_Letter.iloc[0]['Output']
-        else:
-            pass
-        
-        x = 1
-        
-        while x < 38:
-            if Pos[x] + 1 == 38:
-                Pos[x] = 1
-            else:
-                Pos[x] = Pos[x] + 1  
-            
-            x = x + 1
-        
-        Letter_num = Letter_num + 1
-
-def Rotor_H_Encode():
-    global Cypher_text
-    Input_text_length = len(Input_text)
-    Letter_num = Initial_Pos * -1
-    
-    Set_positions()    
-
-        
-    Cypher_text = ""
-      
-    while Letter_num <= Input_text_length:
-        
-        x = 1        
-        
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_H[1], Rotor_H[2], Rotor_H[3], Rotor_H[4], Rotor_H[5], Rotor_H[6], Rotor_H[7], Rotor_H[8], Rotor_H[9], Rotor_H[10],
-                                        Rotor_H[11], Rotor_H[12], Rotor_H[13], Rotor_H[14], Rotor_H[15], Rotor_H[16], Rotor_H[17], Rotor_H[18], Rotor_H[19], Rotor_H[20],
-                                        Rotor_H[21], Rotor_H[22], Rotor_H[23], Rotor_H[24], Rotor_H[25], Rotor_H[26], Rotor_H[27], Rotor_H[28], Rotor_H[29], Rotor_H[30],
-                                        Rotor_H[31], Rotor_H[32], Rotor_H[33], Rotor_H[34], Rotor_H[35], Rotor_H[36], Rotor_H[37]]})
-    
-        if Letter_num >= 1:
-            Rotor = Rotor_H_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Input_text_2[Letter_num - 1]]})
-        
-            Cypher_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Cypher_text = Cypher_text + Cypher_Letter.iloc[0]['Output']
-        else:
-            pass
-        
-        x = 1
-        
-        while x < 38:
-            if Pos[x] + 1 == 38:
-                Pos[x] = 1
-            else:
-                Pos[x] = Pos[x] + 1  
-            
-            x = x + 1
-        
-        Letter_num = Letter_num + 1
-        
-#%% Decode text
-def Rotor_A_Decode():
-
-    Set_positions()    
-
-    global Decoded_text
-    Cypher_text_length = len(Cypher_text)
-    Letter_num = Initial_Pos * -1
-    
-    Decoded_text = ""
-   
-    while Letter_num <= Cypher_text_length:
-
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_A[1], Rotor_A[2], Rotor_A[3], Rotor_A[4], Rotor_A[5], Rotor_A[6], Rotor_A[7], Rotor_A[8], Rotor_A[9], Rotor_A[10],
-                                        Rotor_A[11], Rotor_A[12], Rotor_A[13], Rotor_A[14], Rotor_A[15], Rotor_A[16], Rotor_A[17], Rotor_A[18], Rotor_A[19], Rotor_A[20],
-                                        Rotor_A[21], Rotor_A[22], Rotor_A[23], Rotor_A[24], Rotor_A[25], Rotor_A[26], Rotor_A[27], Rotor_A[28], Rotor_A[29], Rotor_A[30],
-                                        Rotor_A[31], Rotor_A[32], Rotor_A[33], Rotor_A[34], Rotor_A[35], Rotor_A[36], Rotor_A[37]]})
-        
-        if Letter_num >= 1:
-        
-            Rotor = Rotor_A_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Cypher_text_2[Letter_num - 1]]})
-        
-            Decoded_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Decoded_text = Decoded_text + Decoded_Letter.iloc[0]['Output']
-        else:
-            pass
-                           
-        x = 1
-        
-        while x < 38:
-            if Pos[x] - 1 == 0:
-                Pos[x] = 37
-            else:
-                Pos[x] = Pos[x] - 1  
-            x = x + 1            
-        
-        Letter_num = Letter_num + 1
-
-def Rotor_B_Decode():
-    global Decoded_text
-    Cypher_text_length = len(Cypher_text)
-    Letter_num = Initial_Pos * -1
-    
-    Set_positions()    
-    
-    
-    Decoded_text = ""
-    
-    while Letter_num <= Cypher_text_length:
-        
-        x = 1
-        
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_B[1], Rotor_B[2], Rotor_B[3], Rotor_B[4], Rotor_B[5], Rotor_B[6], Rotor_B[7], Rotor_B[8], Rotor_B[9], Rotor_B[10],
-                                        Rotor_B[11], Rotor_B[12], Rotor_B[13], Rotor_B[14], Rotor_B[15], Rotor_B[16], Rotor_B[17], Rotor_B[18], Rotor_B[19], Rotor_B[20],
-                                        Rotor_B[21], Rotor_B[22], Rotor_B[23], Rotor_B[24], Rotor_B[25], Rotor_B[26], Rotor_B[27], Rotor_B[28], Rotor_B[29], Rotor_B[30],
-                                        Rotor_B[31], Rotor_B[32], Rotor_B[33], Rotor_B[34], Rotor_B[35], Rotor_B[36], Rotor_B[37]]})
-    
-        if Letter_num >= 1:
-        
-            Rotor = Rotor_B_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Cypher_text_2[Letter_num - 1]]})
-        
-            Decoded_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Decoded_text = Decoded_text + Decoded_Letter.iloc[0]['Output']
-        else:
-            pass
-                           
-        x = 1
-        
-        while x < 38:
-            if Pos[x] - 1 == 0:
-                Pos[x] = 37
-            else:
-                Pos[x] = Pos[x] - 1  
-            x = x + 1            
-        
-        Letter_num = Letter_num + 1
-    
-def Rotor_C_Decode():
-    global Decoded_text
-    Cypher_text_length = len(Cypher_text)
-    Letter_num = Initial_Pos * -1
-    
-    Set_positions()    
-    
-    
-    Decoded_text = ""
-    
-    while Letter_num <= Cypher_text_length:
-        
-        x = 1
-        
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_C[1], Rotor_C[2], Rotor_C[3], Rotor_C[4], Rotor_C[5], Rotor_C[6], Rotor_C[7], Rotor_C[8], Rotor_C[9], Rotor_C[10],
-                                        Rotor_C[11], Rotor_C[12], Rotor_C[13], Rotor_C[14], Rotor_C[15], Rotor_C[16], Rotor_C[17], Rotor_C[18], Rotor_C[19], Rotor_C[20],
-                                        Rotor_C[21], Rotor_C[22], Rotor_C[23], Rotor_C[24], Rotor_C[25], Rotor_C[26], Rotor_C[27], Rotor_C[28], Rotor_C[29], Rotor_C[30],
-                                        Rotor_C[31], Rotor_C[32], Rotor_C[33], Rotor_C[34], Rotor_C[35], Rotor_C[36], Rotor_C[37]]})
-    
-        if Letter_num >= 1:
-        
-            Rotor = Rotor_C_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Cypher_text_2[Letter_num - 1]]})
-        
-            Decoded_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Decoded_text = Decoded_text + Decoded_Letter.iloc[0]['Output']
-        else:
-            pass
-                           
-        x = 1
-        
-        while x < 38:
-            if Pos[x] - 1 == 0:
-                Pos[x] = 37
-            else:
-                Pos[x] = Pos[x] - 1  
-            x = x + 1            
-        
-        Letter_num = Letter_num + 1
-
-def Rotor_D_Decode():
-    global Decoded_text
-    Cypher_text_length = len(Cypher_text)
-    Letter_num = Initial_Pos * -1
-    
-    Set_positions()    
-    
-    
-    Decoded_text = ""
-    
-    while Letter_num <= Cypher_text_length:
-        
-        x = 1
-        
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_D[1], Rotor_D[2], Rotor_D[3], Rotor_D[4], Rotor_D[5], Rotor_D[6], Rotor_D[7], Rotor_D[8], Rotor_D[9], Rotor_D[10],
-                                        Rotor_D[11], Rotor_D[12], Rotor_D[13], Rotor_D[14], Rotor_D[15], Rotor_D[16], Rotor_D[17], Rotor_D[18], Rotor_D[19], Rotor_D[20],
-                                        Rotor_D[21], Rotor_D[22], Rotor_D[23], Rotor_D[24], Rotor_D[25], Rotor_D[26], Rotor_D[27], Rotor_D[28], Rotor_D[29], Rotor_D[30],
-                                        Rotor_D[31], Rotor_D[32], Rotor_D[33], Rotor_D[34], Rotor_D[35], Rotor_D[36], Rotor_D[37]]})
-    
-        if Letter_num >= 1:
-        
-            Rotor = Rotor_D_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Cypher_text_2[Letter_num - 1]]})
-        
-            Decoded_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Decoded_text = Decoded_text + Decoded_Letter.iloc[0]['Output']
-        else:
-            pass
-                           
-        x = 1
-        
-        while x < 38:
-            if Pos[x] - 1 == 0:
-                Pos[x] = 37
-            else:
-                Pos[x] = Pos[x] - 1  
-            x = x + 1            
-        
-        Letter_num = Letter_num + 1
-
-def Rotor_E_Decode():
-    global Decoded_text
-    Cypher_text_length = len(Cypher_text)
-    Letter_num = Initial_Pos * -1
-    
-    Set_positions()    
-   
-    
-    Decoded_text = ""
-    
-    while Letter_num <= Cypher_text_length:
-        
-        x = 1
-        
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_E[1], Rotor_E[2], Rotor_E[3], Rotor_E[4], Rotor_E[5], Rotor_E[6], Rotor_E[7], Rotor_E[8], Rotor_E[9], Rotor_E[10],
-                                        Rotor_E[11], Rotor_E[12], Rotor_E[13], Rotor_E[14], Rotor_E[15], Rotor_E[16], Rotor_E[17], Rotor_E[18], Rotor_E[19], Rotor_E[20],
-                                        Rotor_E[21], Rotor_E[22], Rotor_E[23], Rotor_E[24], Rotor_E[25], Rotor_E[26], Rotor_E[27], Rotor_E[28], Rotor_E[29], Rotor_E[30],
-                                        Rotor_E[31], Rotor_E[32], Rotor_E[33], Rotor_E[34], Rotor_E[35], Rotor_E[36], Rotor_E[37]]})
-    
-        if Letter_num >= 1:
-        
-            Rotor = Rotor_E_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Cypher_text_2[Letter_num - 1]]})
-        
-            Decoded_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Decoded_text = Decoded_text + Decoded_Letter.iloc[0]['Output']
-        else:
-            pass
-                           
-        x = 1
-        
-        while x < 38:
-            if Pos[x] - 1 == 0:
-                Pos[x] = 37
-            else:
-                Pos[x] = Pos[x] - 1  
-            x = x + 1            
-        
-        Letter_num = Letter_num + 1
-
-def Rotor_F_Decode():
-    global Decoded_text
-    Cypher_text_length = len(Cypher_text)
-    Letter_num = Initial_Pos * -1
-    
-    Set_positions()    
-  
-    
-    Decoded_text = ""
-    
-    while Letter_num <= Cypher_text_length:
-        
-        x = 1
-        
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_F[1], Rotor_F[2], Rotor_F[3], Rotor_F[4], Rotor_F[5], Rotor_F[6], Rotor_F[7], Rotor_F[8], Rotor_F[9], Rotor_F[10],
-                                        Rotor_F[11], Rotor_F[12], Rotor_F[13], Rotor_F[14], Rotor_F[15], Rotor_F[16], Rotor_F[17], Rotor_F[18], Rotor_F[19], Rotor_F[20],
-                                        Rotor_F[21], Rotor_F[22], Rotor_F[23], Rotor_F[24], Rotor_F[25], Rotor_F[26], Rotor_F[27], Rotor_F[28], Rotor_F[29], Rotor_F[30],
-                                        Rotor_F[31], Rotor_F[32], Rotor_F[33], Rotor_F[34], Rotor_F[35], Rotor_F[36], Rotor_F[37]]})
-    
-        if Letter_num >= 1:
-        
-            Rotor = Rotor_F_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Cypher_text_2[Letter_num - 1]]})
-        
-            Decoded_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Decoded_text = Decoded_text + Decoded_Letter.iloc[0]['Output']
-        else:
-            pass
-                           
-        x = 1
-        
-        while x < 38:
-            if Pos[x] - 1 == 0:
-                Pos[x] = 37
-            else:
-                Pos[x] = Pos[x] - 1  
-            x = x + 1            
-        
-        Letter_num = Letter_num + 1
-
-def Rotor_G_Decode():
-    global Decoded_text
-    Cypher_text_length = len(Cypher_text)
-    Letter_num = Initial_Pos * -1
-    
-    Set_positions()    
-   
-    
-    Decoded_text = ""
-    
-    while Letter_num <= Cypher_text_length:
-        
-        x = 1
-        
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_G[1], Rotor_G[2], Rotor_G[3], Rotor_G[4], Rotor_G[5], Rotor_G[6], Rotor_G[7], Rotor_G[8], Rotor_G[9], Rotor_G[10],
-                                        Rotor_G[11], Rotor_G[12], Rotor_G[13], Rotor_G[14], Rotor_G[15], Rotor_G[16], Rotor_G[17], Rotor_G[18], Rotor_G[19], Rotor_G[20],
-                                        Rotor_G[21], Rotor_G[22], Rotor_G[23], Rotor_G[24], Rotor_G[25], Rotor_G[26], Rotor_G[27], Rotor_G[28], Rotor_G[29], Rotor_G[30],
-                                        Rotor_G[31], Rotor_G[32], Rotor_G[33], Rotor_G[34], Rotor_G[35], Rotor_G[36], Rotor_G[37]]})
-    
-        if Letter_num >= 1:
-        
-            Rotor = Rotor_G_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Cypher_text_2[Letter_num - 1]]})
-        
-            Decoded_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Decoded_text = Decoded_text + Decoded_Letter.iloc[0]['Output']
-        else:
-            pass
-                           
-        x = 1
-        
-        while x < 38:
-            if Pos[x] - 1 == 0:
-                Pos[x] = 37
-            else:
-                Pos[x] = Pos[x] - 1  
-            x = x + 1            
-        
-        Letter_num = Letter_num + 1
-
-def Rotor_H_Decode():
-    global Decoded_text
-    Cypher_text_length = len(Cypher_text)
-    Letter_num = Initial_Pos * -1
-    
-    Set_positions()    
- 
-    Decoded_text = ""
-    
-    while Letter_num <= Cypher_text_length:
-        
-        x = 1
-        
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[Rotor_H[1], Rotor_H[2], Rotor_H[3], Rotor_H[4], Rotor_H[5], Rotor_H[6], Rotor_H[7], Rotor_H[8], Rotor_H[9], Rotor_H[10],
-                                        Rotor_H[11], Rotor_H[12], Rotor_H[13], Rotor_H[14], Rotor_H[15], Rotor_H[16], Rotor_H[17], Rotor_H[18], Rotor_H[19], Rotor_H[20],
-                                        Rotor_H[21], Rotor_H[22], Rotor_H[23], Rotor_H[24], Rotor_H[25], Rotor_H[26], Rotor_H[27], Rotor_H[28], Rotor_H[29], Rotor_H[30],
-                                        Rotor_H[31], Rotor_H[32], Rotor_H[33], Rotor_H[34], Rotor_H[35], Rotor_H[36], Rotor_H[37]]})
-    
-        if Letter_num >= 1:
-        
-            Rotor = Rotor_H_Ref.merge(Rotor_Output, how = 'left', on = 'Pos')  
-        
-            Convert = pd.DataFrame ({'Input': [Cypher_text_2[Letter_num - 1]]})
-        
-            Decoded_Letter = Convert.merge(Rotor, how = 'left', on = 'Input')
-        
-            Decoded_text = Decoded_text + Decoded_Letter.iloc[0]['Output']
-        else:
-            pass
-                           
-        x = 1
-        
-        while x < 38:
-            if Pos[x] - 1 == 0:
-                Pos[x] = 37
-            else:
-                Pos[x] = Pos[x] - 1  
-            x = x + 1            
-        
-        Letter_num = Letter_num + 1
-
-#%% Encode Text    
-        
+#%% Encode Text 
+Convert_text()
 Define_rotors()
-Input_text = ''
-Input_text = input('Enter text to be encoded: ')
+if Input_text == '':
+    Input_text = input('Enter text to be encoded: ')
+else:
+    print('Text to be encoded: provided elsewhere')
 
-if Input_text == "":
+if Input_text == '':
     Input_text = 'Trial text'
 else:
     pass
@@ -941,99 +313,146 @@ else:
 Input_text = Input_text.upper()
 Input_text_2 = Input_text
 
-
-
+Encode_start = time.time()
+# All of this could be run as a loop but i wonder if that would slow things down?
 #Rotor 1
 Initial_Pos = ROIP[1] 
-globals()['Rotor_'+ ROIP[0] + '_Encode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[0]
+Encode()
 Input_text_2 = Cypher_text
 
 #Rotor 2
 Initial_Pos = ROIP[3]
-globals()['Rotor_'+ ROIP[2] + '_Encode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[2]
+Encode()
 Input_text_2 = Cypher_text
 
 #Rotor 3
 Initial_Pos = ROIP[5]
-globals()['Rotor_'+ ROIP[4] + '_Encode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[4]
+Encode()
 Input_text_2 = Cypher_text
 
 #Rotor 4
 Initial_Pos = ROIP[7]
-globals()['Rotor_'+ ROIP[6] + '_Encode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[6]
+Encode()
 Input_text_2 = Cypher_text
 
 #Rotor 5
 Initial_Pos = ROIP[9]
-globals()['Rotor_'+ ROIP[8] + '_Encode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[8]
+Encode()
 Input_text_2 = Cypher_text
 
 #Rotor 6
 Initial_Pos = ROIP[11]
-globals()['Rotor_'+ ROIP[10] + '_Encode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[10]
+Encode()
 Input_text_2 = Cypher_text
 
 #Rotor 7
 Initial_Pos = ROIP[13]
-globals()['Rotor_'+ ROIP[12] + '_Encode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[12]
+Encode()
 Input_text_2 = Cypher_text
 
 #Rotor 8
 Initial_Pos = ROIP[15]
-globals()['Rotor_'+ ROIP[14] + '_Encode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[14]
+Encode()
 Input_text_2 = Cypher_text
 
 print('Cypher text: ' + Cypher_text)
+Encode_end = time.time()
 
 #%% Decode Text
+Convert_text()
 Define_rotors()
-Cypher_text_3 = input('Enter text to be decoded: ')
 
-if Cypher_text_3 == "":
+if Cypher_text_3 == '':
+    Cypher_text_3 = input('Enter text to be decoded: ')
+else:
+    print('Text to be decoded: provided elsewhere')
+
+if Cypher_text_3 == '':
     Cypher_text = Cypher_text
 else:
     Cypher_text = Cypher_text_3
 
 Cypher_text_2 = Cypher_text
 
-#Rotor 8
+Decode_start = time.time()
+# All of this could be run as a loop but i wonder if that would slow things down?
+# Rotor 8
 Initial_Pos = ROIP[15]
-globals()['Rotor_'+ ROIP[14] + '_Decode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[14]
+Decode()
 Cypher_text_2 = Decoded_text
 
 #Rotor 7
 Initial_Pos = ROIP[13]
-globals()['Rotor_'+ ROIP[12] + '_Decode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[12]
+Decode()
 Cypher_text_2 = Decoded_text
 
 #Rotor 6
 Initial_Pos = ROIP[11]
-globals()['Rotor_'+ ROIP[10] + '_Decode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[10]
+Decode()
 Cypher_text_2 = Decoded_text
 
 #Rotor 5
 Initial_Pos = ROIP[9]
-globals()['Rotor_'+ ROIP[8]+ '_Decode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[8]
+Decode()
 Cypher_text_2 = Decoded_text
 
 #Rotor 4
 Initial_Pos = ROIP[7]
-globals()['Rotor_'+ ROIP[6] + '_Decode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[6]
+Decode()
 Cypher_text_2 = Decoded_text
 
 #Rotor 3
 Initial_Pos = ROIP[5]
-globals()['Rotor_'+ ROIP[4] + '_Decode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[4]
+Decode()
 Cypher_text_2 = Decoded_text
 
 #Rotor 2
 Initial_Pos = ROIP[3]
-globals()['Rotor_'+ ROIP[2] + '_Decode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[2]
+Decode()
 Cypher_text_2 = Decoded_text
 
 #Rotor 1
 Initial_Pos = ROIP[1]
-globals()['Rotor_'+ ROIP[0] + '_Decode']()
+globals()['Rotor_X'] = 'Rotor_' + ROIP[0]
+Decode()
 Cypher_text_2 = Decoded_text
 
 print('Decoded text: ' + Decoded_text)
+Decode_end = time.time()
+
+#%% Outputs Cyphr text to txt
+File_save = input('Do you want to save the outputs (Y,N): ')
+
+if File_save == 'Y' or File_save == 'y':
+    Cypher_txt = open("Cypher_text.txt","w")
+    Cypher_txt.write(Cypher_text)
+    Cypher_txt.close()
+
+    Decoded_txt = open("Decoded_text.txt","w")
+    Decoded_txt.write(Decoded_text)
+    Decoded_txt.close()
+    
+    print('Files saved')
+    
+else:
+    print('Files not saved')
+
+print("Encode length = %s characters" % (len(Cypher_text))) 
+print("Encode time = %s sec" % (Encode_end - Encode_start)) 
+print("Decode length = %s characters" % (len(Decoded_text)))    
+print("Decode time = %s sec" % (Decode_end - Decode_start))
