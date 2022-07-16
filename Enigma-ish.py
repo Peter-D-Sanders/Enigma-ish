@@ -27,6 +27,7 @@ Date          Version     Author         Description
 15/05/2022    v2.3        Pete Sanders   More code improvements.
 16/05/2022    v3.0        Pete Sanders   Made as a .exe and added some front end.
 19/05/2022    v3.1        Pete Sanders   Allowed the use of any number of rotors.
+16/07/2022    v3.2        Pete Sanders   Made some efficiencty changes.
         
 RECOMMENDED FUTURE IMPROVEMENTS:
     Include a reflector and pinboard to properly model enigma.
@@ -205,8 +206,7 @@ def Encode():
                                              Rotor_Input_2[Rotor_X].loc[10], Rotor_Input_2[Rotor_X].loc[11], Rotor_Input_2[Rotor_X].loc[12], Rotor_Input_2[Rotor_X].loc[13], Rotor_Input_2[Rotor_X].loc[14], Rotor_Input_2[Rotor_X].loc[15], Rotor_Input_2[Rotor_X].loc[16], Rotor_Input_2[Rotor_X].loc[17], Rotor_Input_2[Rotor_X].loc[18], Rotor_Input_2[Rotor_X].loc[19],
                                              Rotor_Input_2[Rotor_X].loc[20], Rotor_Input_2[Rotor_X].loc[21], Rotor_Input_2[Rotor_X].loc[22], Rotor_Input_2[Rotor_X].loc[23], Rotor_Input_2[Rotor_X].loc[24], Rotor_Input_2[Rotor_X].loc[25], Rotor_Input_2[Rotor_X].loc[26], Rotor_Input_2[Rotor_X].loc[27], Rotor_Input_2[Rotor_X].loc[28], Rotor_Input_2[Rotor_X].loc[29],
                                              Rotor_Input_2[Rotor_X].loc[30], Rotor_Input_2[Rotor_X].loc[31], Rotor_Input_2[Rotor_X].loc[32], Rotor_Input_2[Rotor_X].loc[33], Rotor_Input_2[Rotor_X].loc[34], Rotor_Input_2[Rotor_X].loc[35], Rotor_Input_2[Rotor_X].loc[36]]})
-    # for i in input text.
-    while Letter_num <= Input_text_length:
+    for i in Input_text:
       
         # Shifts the Pos value by the initial rotor position
         # Shifts the "Pos" value by 1 (or loops round) which has the effect of moving the 
@@ -281,7 +281,7 @@ def Decode():
                                              Rotor_Input_2[Rotor_X].loc[20], Rotor_Input_2[Rotor_X].loc[21], Rotor_Input_2[Rotor_X].loc[22], Rotor_Input_2[Rotor_X].loc[23], Rotor_Input_2[Rotor_X].loc[24], Rotor_Input_2[Rotor_X].loc[25], Rotor_Input_2[Rotor_X].loc[26], Rotor_Input_2[Rotor_X].loc[27], Rotor_Input_2[Rotor_X].loc[28], Rotor_Input_2[Rotor_X].loc[29],
                                              Rotor_Input_2[Rotor_X].loc[30], Rotor_Input_2[Rotor_X].loc[31], Rotor_Input_2[Rotor_X].loc[32], Rotor_Input_2[Rotor_X].loc[33], Rotor_Input_2[Rotor_X].loc[34], Rotor_Input_2[Rotor_X].loc[35], Rotor_Input_2[Rotor_X].loc[36]]})
 
-    while Letter_num <= Cypher_text_length:  
+    for i in Input_text:  
         Rotor_Output['Pos'] = [Pos[((0 - x) % 37)], Pos[((1 - x) % 37)], Pos[((2 - x) % 37)], Pos[((3 - x) % 37)], Pos[((4 - x) % 37)],
                                Pos[((5 - x) % 37)], Pos[((6 - x) % 37)], Pos[((7 - x) % 37)], Pos[((8 - x) % 37)], Pos[((9 - x) % 37)],
                                Pos[((10 - x) % 37)], Pos[((11 - x) % 37)], Pos[((12 - x) % 37)], Pos[((13 - x) % 37)], Pos[((14 - x) % 37)],
@@ -328,7 +328,6 @@ def Encode_text():
 
     Encode_start = time.time()
     
-    # Cycles through each rotor
     a = 0
     b = int(len(ROIP)) - 2
 
@@ -368,9 +367,6 @@ def Decode_text():
     Cypher_text_2 = Cypher_text
     
     Decode_start = time.time()
-    # All of this could be run as a loop but i wonder if that would slow things down?
-    # If it was run as a loop it could be programmed so that any number of rotors could be used.
-    # Rotor 8
     
     a = int(len(ROIP))
     b = 2
@@ -418,5 +414,4 @@ def GO():
 button1 = tk.Button(root, text = 'Encode/Decode' ,command = GO, bg='brown',fg='white')
 button1.pack()
 
-# No idea what this does but its  important.
 root.mainloop()
