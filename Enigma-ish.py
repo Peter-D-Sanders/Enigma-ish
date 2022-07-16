@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 SCRIPT NAME:
     Enigma-ish.py
