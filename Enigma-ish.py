@@ -28,6 +28,7 @@ Date          Version     Author         Description
 16/05/2022    v3.0        Pete Sanders   Made as a .exe and added some front end.
 19/05/2022    v3.1        Pete Sanders   Allowed the use of any number of rotors.
 16/07/2022    v3.2        Pete Sanders   Made some efficiencty changes.
+16/07/2022    v3.3        Pete Sanders   Bug fix.
         
 RECOMMENDED FUTURE IMPROVEMENTS:
     Include a reflector and pinboard to properly model enigma.
@@ -185,14 +186,11 @@ def Encode():
     # Resets the rotor position
     Set_positions() 
     
-    # Define length of text to be decoded
-    Input_text_length = len(Input_text)
-    
     Letter_num = 0
     
     x = Initial_Pos
     
-    # Resets the cypher text given that anything being encoded will be the new cypher text
+    # Resets the cypher text so  that anything being encoded will be the new cypher text
     Cypher_text = ""
     
     Rotor_Output = pd.DataFrame ({'Pos':[Pos[((0 + x) % 37)], Pos[((1 + x) % 37)], Pos[((2 + x) % 37)], Pos[((3 + x) % 37)], Pos[((4 + x) % 37)],
@@ -207,8 +205,8 @@ def Encode():
                                              Rotor_Input_2[Rotor_X].loc[10], Rotor_Input_2[Rotor_X].loc[11], Rotor_Input_2[Rotor_X].loc[12], Rotor_Input_2[Rotor_X].loc[13], Rotor_Input_2[Rotor_X].loc[14], Rotor_Input_2[Rotor_X].loc[15], Rotor_Input_2[Rotor_X].loc[16], Rotor_Input_2[Rotor_X].loc[17], Rotor_Input_2[Rotor_X].loc[18], Rotor_Input_2[Rotor_X].loc[19],
                                              Rotor_Input_2[Rotor_X].loc[20], Rotor_Input_2[Rotor_X].loc[21], Rotor_Input_2[Rotor_X].loc[22], Rotor_Input_2[Rotor_X].loc[23], Rotor_Input_2[Rotor_X].loc[24], Rotor_Input_2[Rotor_X].loc[25], Rotor_Input_2[Rotor_X].loc[26], Rotor_Input_2[Rotor_X].loc[27], Rotor_Input_2[Rotor_X].loc[28], Rotor_Input_2[Rotor_X].loc[29],
                                              Rotor_Input_2[Rotor_X].loc[30], Rotor_Input_2[Rotor_X].loc[31], Rotor_Input_2[Rotor_X].loc[32], Rotor_Input_2[Rotor_X].loc[33], Rotor_Input_2[Rotor_X].loc[34], Rotor_Input_2[Rotor_X].loc[35], Rotor_Input_2[Rotor_X].loc[36]]})
-    for i in Input_text:
-      
+    
+    for i in Input_text:      
         # Shifts the Pos value by the initial rotor position
         # Shifts the "Pos" value by 1 (or loops round) which has the effect of moving the 
         # Output column of the Rotor df up by one position but leaving the Input column in place 
@@ -261,8 +259,6 @@ def Decode():
     
     Set_positions()  
     
-    Cypher_text_length = len(Cypher_text)
-    
     Letter_num = 0
     
     x = Initial_Pos    
@@ -282,7 +278,7 @@ def Decode():
                                              Rotor_Input_2[Rotor_X].loc[20], Rotor_Input_2[Rotor_X].loc[21], Rotor_Input_2[Rotor_X].loc[22], Rotor_Input_2[Rotor_X].loc[23], Rotor_Input_2[Rotor_X].loc[24], Rotor_Input_2[Rotor_X].loc[25], Rotor_Input_2[Rotor_X].loc[26], Rotor_Input_2[Rotor_X].loc[27], Rotor_Input_2[Rotor_X].loc[28], Rotor_Input_2[Rotor_X].loc[29],
                                              Rotor_Input_2[Rotor_X].loc[30], Rotor_Input_2[Rotor_X].loc[31], Rotor_Input_2[Rotor_X].loc[32], Rotor_Input_2[Rotor_X].loc[33], Rotor_Input_2[Rotor_X].loc[34], Rotor_Input_2[Rotor_X].loc[35], Rotor_Input_2[Rotor_X].loc[36]]})
 
-    for i in Input_text:  
+    for i in Cypher_text:  
         Rotor_Output['Pos'] = [Pos[((0 - x) % 37)], Pos[((1 - x) % 37)], Pos[((2 - x) % 37)], Pos[((3 - x) % 37)], Pos[((4 - x) % 37)],
                                Pos[((5 - x) % 37)], Pos[((6 - x) % 37)], Pos[((7 - x) % 37)], Pos[((8 - x) % 37)], Pos[((9 - x) % 37)],
                                Pos[((10 - x) % 37)], Pos[((11 - x) % 37)], Pos[((12 - x) % 37)], Pos[((13 - x) % 37)], Pos[((14 - x) % 37)],
@@ -318,7 +314,7 @@ def Encode_text():
     global Initial_Pos
     global ROIP
         
-    Input_text = str(IT)
+    Input_text = str(IT) + "1"
     
     Input_text = Input_text.upper()
     
@@ -358,7 +354,7 @@ def Decode_text():
     global Initial_Pos
     global ROIP
 
-    Cypher_text = str(IT)
+    Cypher_text = str(IT) + "1"
     
     Cypher_text = Cypher_text.upper()
     
