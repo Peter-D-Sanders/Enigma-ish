@@ -22,7 +22,8 @@ Date          Version     Author         Description
 06/05/2022    v2.1        Pete Sanders   Ammended to convert non-recognised characters to
                                          something recognisable. Made code more efficient.
                                          1000 character: encode = 28.63 sec, decode = 33.91 sec
-                                         
+15/05/2022    v2.2        Pete Sanders   Ammended to change the way that the initial pos is set.                                     
+                                         1000 character: encode = 23.40 sec, decode = 24.86 sec
 RECOMMENDED FUTURE IMPROVEMENTS:
     Include a reflector and pinboard to properly model enigma.
     Allow the use of additional characters.
@@ -104,6 +105,29 @@ def Define_rotors():
     global Rotor_G
     global Rotor_H
     global Rotor_X
+    global Rotor_Input_2
+    
+    # Setup this DF so that each column is a different rotor and reference this in the
+    # encode and decode functions so it doesn't have to be defined each time.
+    Rotor_Input_2 = pd.DataFrame ({'Pos':[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+                                          21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,36, 37],
+                               'Rotor_A':['1', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'J', 'A', 'B', '7', 'D', 'E', 'F', 'G', 'H', 'I', 'T',
+                                          '5', '6', 'C', '8', '9', '0', ' ', '2', '3', '4', 'U', 'V', 'W', 'X', 'Y', 'Z', 'K'],
+                               'Rotor_B':[' ', '0', '9', '8', '7', '6', '5', '4', '3', '2', '1', 'Z', 'Y', 'X', 'W', 'V', 'U', 'T', 'S', 'R',
+                                          'Q','P','O','N','M','L','K','J','I','H', 'G','F','E','D','C', 'B', 'A'],
+                               'Rotor_C':['B', 'A', 'D', 'C', 'F', 'E', 'H', 'G', 'J','I', 'L','K','N','M','P','O','R','Q','T','S',
+                                          'V','U','X','W','Z','Y','2','1','4','3','6','5','8','7','0', '9', ' '],
+                               'Rotor_D':['J', 'I', 'H', 'G', 'F', 'E', 'D', 'C', 'B','A','T','S','R','Q','P','O','N','M','L','K',
+                                          '4','3','2','1','Z','Y','X','W','V','U',' ','0','9','7','8', '6', '5'],
+                               'Rotor_E':['L', 'K', 'N', 'M', 'P', 'O', 'R', 'Q', 'T','J','B','A','D','C','F','E','H','3','S','I',
+                                          '6','V','8','X','0',' ','1','2','G','4','5','U','7','W','9', 'Y', 'Z'],
+                               'Rotor_F':['A', 'K', 'C', 'M', 'E', 'O', 'G', 'Q', 'I','S','B','U','D','W','F','Y','H','1','J','3',
+                                          'L','5','N','7','P','9','R',' ','T','4','V','6','X','8','Z', '0', '2'],
+                               'Rotor_G':['5', '6', '7', '8', '9', '0', ' ', 'H', 'I','J','U','L','W','N','Y','P','1','2','3','T',
+                                          'K','V','M','X','O','Z','Q','R','S','4','A','B','C','D','E', 'F', 'G'],
+                               'Rotor_H':['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I','J','K','L','M','N','O','P','Q','R','S','T',
+                                          'U','V','W','X','Y','Z','1','2','3','4','5','6','7','8','9', '0', ' ']})
+
     
     # The following dictionaries describe the mapping of each rotor i.e. the letter that appears at position x on the rotor.
     Rotor_A = dict([(37, 'K'), (2, 'L'), (3, 'M'), (4, 'N'), (5, 'O'), (6, 'P'), (7, 'Q'), (8, 'R'), (9, 'S'), (10, 'J'),
@@ -148,6 +172,8 @@ def Define_rotors():
                     (21, 'U'), (22, 'V'), (23, 'W'), (24, 'X'), (25, 'Y'), (26, 'Z'), (27, '1'), (28, '2'), (29, '3'), (30, '4'),
                     (31, '5'), (32, '6'), (33, '7'), (34, '8'), (35, '9'), (36, '0'), (37, ' ')])
 
+Define_rotors()
+
 #%% Encode
 def Encode():
     global Rotor_X
@@ -161,18 +187,8 @@ def Encode():
     
     Letter_num = 0
     
-    # This bit loops round the pos until it reaches the initial position.
-    A = 0
-    while A < Initial_Pos:
-        x = 1
-        while x < 38:
-            if Pos[x] + 1 == 38:
-                Pos[x] = 1
-            else:
-                Pos[x] = Pos[x] + 1 
-            x = x + 1
-        A = A + 1
-
+    x = Initial_Pos
+    
     # Resets the cypher text given that anything being encoded will be the new cypher text
     Cypher_text = ""
          
@@ -188,12 +204,19 @@ def Encode():
                                         globals()[Rotor_X][11], globals()[Rotor_X][12], globals()[Rotor_X][13], globals()[Rotor_X][14], globals()[Rotor_X][15], globals()[Rotor_X][16], globals()[Rotor_X][17], globals()[Rotor_X][18], globals()[Rotor_X][19], globals()[Rotor_X][20],
                                         globals()[Rotor_X][21], globals()[Rotor_X][22], globals()[Rotor_X][23], globals()[Rotor_X][24], globals()[Rotor_X][25], globals()[Rotor_X][26], globals()[Rotor_X][27], globals()[Rotor_X][28], globals()[Rotor_X][29], globals()[Rotor_X][30],
                                         globals()[Rotor_X][31], globals()[Rotor_X][32], globals()[Rotor_X][33], globals()[Rotor_X][34], globals()[Rotor_X][35], globals()[Rotor_X][36], globals()[Rotor_X][37]]})
-        
-        
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
+      
+        # Shifts the Pos value by the initial rotor position
+        # Shifts the "Pos" value by 1 (or loops round) which has the effect of moving the 
+        # Output column of the Rotor df up by one position but leaving the Input column in place 
+        # ((0 + x) % 37) + 1 = take the dictionary ref (0) add the initial position and then add 1
+        Rotor_Output = pd.DataFrame ({'Pos':[Pos[((0 + x) % 37) + 1], Pos[((1 + x) % 37) + 1], Pos[((2 + x) % 37) + 1], Pos[((3 + x) % 37) + 1], Pos[((4 + x) % 37) + 1],
+                                             Pos[((5 + x) % 37) + 1], Pos[((6 + x) % 37) + 1], Pos[((7 + x) % 37) + 1], Pos[((8 + x) % 37) + 1], Pos[((9 + x) % 37) + 1],
+                                             Pos[((10 + x) % 37) + 1], Pos[((11 + x) % 37) + 1], Pos[((12 + x) % 37) + 1], Pos[((13 + x) % 37) + 1], Pos[((14 + x) % 37) + 1],
+                                             Pos[((15 + x) % 37) + 1], Pos[((16 + x) % 37) + 1], Pos[((17 + x) % 37) + 1], Pos[((18 + x) % 37) + 1], Pos[((19 + x) % 37) + 1],
+                                             Pos[((20 + x) % 37) + 1], Pos[((21 + x) % 37) + 1], Pos[((22 + x) % 37) + 1], Pos[((23 + x) % 37) + 1], Pos[((24 + x) % 37) + 1],
+                                             Pos[((25 + x) % 37) + 1], Pos[((26 + x) % 37) + 1], Pos[((27 + x) % 37) + 1], Pos[((28 + x) % 37) + 1], Pos[((29 + x) % 37) + 1],
+                                             Pos[((30 + x) % 37) + 1], Pos[((31 + x) % 37) + 1], Pos[((32 + x) % 37) + 1], Pos[((33 + x) % 37) + 1], Pos[((34 + x) % 37) + 1],
+                                             Pos[((35 + x) % 37) + 1], Pos[((36 + x) % 37) + 1]],
                                       'Output':[globals()[Rotor_X][1], globals()[Rotor_X][2], globals()[Rotor_X][3], globals()[Rotor_X][4], globals()[Rotor_X][5], globals()[Rotor_X][6], globals()[Rotor_X][7], globals()[Rotor_X][8], globals()[Rotor_X][9], globals()[Rotor_X][10],
                                         globals()[Rotor_X][11], globals()[Rotor_X][12], globals()[Rotor_X][13], globals()[Rotor_X][14], globals()[Rotor_X][15], globals()[Rotor_X][16], globals()[Rotor_X][17], globals()[Rotor_X][18], globals()[Rotor_X][19], globals()[Rotor_X][20],
                                         globals()[Rotor_X][21], globals()[Rotor_X][22], globals()[Rotor_X][23], globals()[Rotor_X][24], globals()[Rotor_X][25], globals()[Rotor_X][26], globals()[Rotor_X][27], globals()[Rotor_X][28], globals()[Rotor_X][29], globals()[Rotor_X][30],
@@ -218,18 +241,9 @@ def Encode():
             Cypher_text = Cypher_text + Cypher_Letter         
         else:
             pass
-
-        # Shifts the "Pos" value by 1 (or loops round) which has the effect of moving the 
-        # Output column of the Rotor df up by one position but leaving the Input column in place            
-        x = 1
         
-        while x < 38:
-            if Pos[x] + 1 == 38:
-                Pos[x] = 1
-            else:
-                Pos[x] = Pos[x] + 1  
-            
-            x = x + 1
+        # Move the position on one space
+        x = x + 1
         
         # Move to the next letter in the text to be encoded
         Letter_num = Letter_num + 1
@@ -244,17 +258,8 @@ def Decode():
     Cypher_text_length = len(Cypher_text)
     
     Letter_num = 0
-
-    a = 0
-    while a < Initial_Pos:
-        x = 1
-        while x < 38:
-            if Pos[x] - 1 == 0:
-                Pos[x] = 37
-            else:
-                Pos[x] = Pos[x] - 1  
-            x = x + 1
-        a = a + 1
+    
+    x = Initial_Pos    
     
     Decoded_text = ""
                 
@@ -268,11 +273,15 @@ def Decode():
                                         globals()[Rotor_X][21], globals()[Rotor_X][22], globals()[Rotor_X][23], globals()[Rotor_X][24], globals()[Rotor_X][25], globals()[Rotor_X][26], globals()[Rotor_X][27], globals()[Rotor_X][28], globals()[Rotor_X][29], globals()[Rotor_X][30],
                                         globals()[Rotor_X][31], globals()[Rotor_X][32], globals()[Rotor_X][33], globals()[Rotor_X][34], globals()[Rotor_X][35], globals()[Rotor_X][36], globals()[Rotor_X][37]]})
     
-        Rotor_Output = pd.DataFrame ({'Pos':[Pos[1], Pos[2], Pos[3], Pos[4], Pos[5], Pos[6], Pos[7], Pos[8], Pos[9], Pos[10],
-                                        Pos[11], Pos[12], Pos[13], Pos[14], Pos[15], Pos[16], Pos[17], Pos[18], Pos[19], Pos[20],
-                                        Pos[21], Pos[22], Pos[23], Pos[24], Pos[25], Pos[26], Pos[27], Pos[28], Pos[29], Pos[30],
-                                        Pos[31], Pos[32], Pos[33], Pos[34], Pos[35], Pos[36], Pos[37]],
-                                      'Output':[globals()[Rotor_X][1], globals()[Rotor_X][2], globals()[Rotor_X][3], globals()[Rotor_X][4], globals()[Rotor_X][5], globals()[Rotor_X][6], globals()[Rotor_X][7], globals()[Rotor_X][8], globals()[Rotor_X][9], globals()[Rotor_X][10],
+        Rotor_Output = pd.DataFrame ({'Pos':[Pos[((0 - x) % 37) + 1], Pos[((1 - x) % 37) + 1], Pos[((2 - x) % 37) + 1], Pos[((3 - x) % 37) + 1], Pos[((4 - x) % 37) + 1],
+                                             Pos[((5 - x) % 37) + 1], Pos[((6 - x) % 37) + 1], Pos[((7 - x) % 37) + 1], Pos[((8 - x) % 37) + 1], Pos[((9 - x) % 37) + 1],
+                                             Pos[((10 - x) % 37) + 1], Pos[((11 - x) % 37) + 1], Pos[((12 - x) % 37) + 1], Pos[((13 - x) % 37) + 1], Pos[((14 - x) % 37) + 1],
+                                             Pos[((15 - x) % 37) + 1], Pos[((16 - x) % 37) + 1], Pos[((17 - x) % 37) + 1], Pos[((18 - x) % 37) + 1], Pos[((19 - x) % 37) + 1],
+                                             Pos[((20 - x) % 37) + 1], Pos[((21 - x) % 37) + 1], Pos[((22 - x) % 37) + 1], Pos[((23 - x) % 37) + 1], Pos[((24 - x) % 37) + 1],
+                                             Pos[((25 - x) % 37) + 1], Pos[((26 - x) % 37) + 1], Pos[((27 - x) % 37) + 1], Pos[((28 - x) % 37) + 1], Pos[((29 - x) % 37) + 1],
+                                             Pos[((30 - x) % 37) + 1], Pos[((31 - x) % 37) + 1], Pos[((32 - x) % 37) + 1], Pos[((33 - x) % 37) + 1], Pos[((34 - x) % 37) + 1],
+                                             Pos[((35 - x) % 37) + 1], Pos[((36 - x) % 37) + 1]],
+                                        'Output':[globals()[Rotor_X][1], globals()[Rotor_X][2], globals()[Rotor_X][3], globals()[Rotor_X][4], globals()[Rotor_X][5], globals()[Rotor_X][6], globals()[Rotor_X][7], globals()[Rotor_X][8], globals()[Rotor_X][9], globals()[Rotor_X][10],
                                         globals()[Rotor_X][11], globals()[Rotor_X][12], globals()[Rotor_X][13], globals()[Rotor_X][14], globals()[Rotor_X][15], globals()[Rotor_X][16], globals()[Rotor_X][17], globals()[Rotor_X][18], globals()[Rotor_X][19], globals()[Rotor_X][20],
                                         globals()[Rotor_X][21], globals()[Rotor_X][22], globals()[Rotor_X][23], globals()[Rotor_X][24], globals()[Rotor_X][25], globals()[Rotor_X][26], globals()[Rotor_X][27], globals()[Rotor_X][28], globals()[Rotor_X][29], globals()[Rotor_X][30],
                                         globals()[Rotor_X][31], globals()[Rotor_X][32], globals()[Rotor_X][33], globals()[Rotor_X][34], globals()[Rotor_X][35], globals()[Rotor_X][36], globals()[Rotor_X][37]]})
@@ -285,15 +294,8 @@ def Decode():
             Decoded_text = Decoded_text + Decoded_Letter
         else:
             pass
-        
-        x = 1
-        
-        while x < 38:
-            if Pos[x] - 1 == 0:
-                Pos[x] = 37
-            else:
-                Pos[x] = Pos[x] - 1  
-            x = x + 1            
+
+        x = x + 1            
         
         Letter_num = Letter_num + 1
             
