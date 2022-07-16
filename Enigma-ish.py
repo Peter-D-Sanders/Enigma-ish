@@ -57,7 +57,7 @@ global ROT
     
 # Assignes some function within tk to root
 root = tk.Tk()
-root.title('Enigma-ish v3.2')
+root.title('Enigma-ish v3.3')
 
 # Sets up the encode/decode message logic
 def print_selection():
