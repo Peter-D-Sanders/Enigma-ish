@@ -29,6 +29,8 @@ Date          Version     Author         Description
 19/05/2022    v3.1        Pete Sanders   Allowed the use of any number of rotors.
 16/07/2022    v3.2        Pete Sanders   Made some efficiencty changes.
 16/07/2022    v3.3        Pete Sanders   Bug fix.
+21/07/2022    v3.4        Pete Sanders   Added functionality to rotate rotors better.
+                                         Changed 'decode' to 'decypher'
         
 RECOMMENDED FUTURE IMPROVEMENTS:
     Include a reflector and pinboard to properly model enigma.
@@ -57,12 +59,12 @@ global ROT
     
 # Assignes some function within tk to root
 root = tk.Tk()
-root.title('Enigma-ish v3.3')
+root.title('Enigma-ish v3.4')
 
 # Sets up the encode/decode message logic
 def print_selection():
     if var1.get() == 1:
-        l.config(text= 'Decode')
+        l.config(text= 'Decypher')
     elif var1.get() == 0:
         l.config(text='Encode')
 
@@ -103,7 +105,7 @@ l.pack()
 
 # sets up a tick box
 var1 = tk.IntVar()
-c1 = tk.Checkbutton(root, text='Decode', variable = var1, onvalue=1, offvalue=0, command = print_selection)
+c1 = tk.Checkbutton(root, text='Decypher', variable = var1, onvalue=1, offvalue=0, command = print_selection)
 c1.pack()
 
 IT = IN.get(1.0, "end-1c")
@@ -114,6 +116,7 @@ RP = ROT.get(1.0, "end-1c")
 Input_text = ''
 Cypher_text = ''
 ROIP = ''
+Rotor_num = 0
 
 #%% Instructions
 # Print instrustions
@@ -126,8 +129,8 @@ print ('Instructions:', '\n',
        '    - A rotor letter may be used more than once,', '\n',
        '    - Initial positions can be any integer.','\n',
        'Enter the text to be converted in the "Input text" box', '\n',
-       'If this is cypher text also check the "Decode" box', '\n',
-       'Press "Encode/Decode"', '\n',
+       'If this is cypher text also check the "Decypher" box', '\n',
+       'Press "Encode/Decypher"', '\n',
        'Converted text will be displayed in the "Output text" box', '\n',)
 
 #%% Set rotor positions
@@ -182,6 +185,7 @@ def Encode():
     global Cypher_text
     global Rotor_Input_2
     global Initial_Pos
+    global Rotor_num
 
     # Resets the rotor position
     Set_positions() 
@@ -189,6 +193,7 @@ def Encode():
     Letter_num = 0
     
     x = Initial_Pos
+    
     
     # Resets the cypher text so  that anything being encoded will be the new cypher text
     Cypher_text = ""
@@ -244,8 +249,13 @@ def Encode():
         else:
             pass
         
-        # Move the position on one space
-        x = x + 1
+        # Move the rotor position one space, for Rotor n this is carried out every n*26th letter.
+        if Rotor_num == 0:
+            x = x + 1
+        elif int(int(Letter_num) % int(26 * Rotor_num)) == 0:
+            x = x + 1
+        else:
+            pass
         
         # Move to the next letter in the text to be encoded
         Letter_num = Letter_num + 1
@@ -256,6 +266,7 @@ def Decode():
     global Decoded_text
     global Rotor_X
     global Rotor_Input_2
+    global Rotor_num
     
     Set_positions()  
     
@@ -302,8 +313,13 @@ def Decode():
             Rotor_Input_2 = Rotor_Input_2.drop(columns = ['Output'])   
         else:
             pass
-
-        x = x + 1            
+        
+        if Rotor_num == 0:
+            x = x + 1
+        elif int(Letter_num) % int(26 * Rotor_num) == 0:
+                x = x + 1
+        else:
+            pass           
         
         Letter_num = Letter_num + 1
             
@@ -313,6 +329,7 @@ def Encode_text():
     global Input_text_2
     global Initial_Pos
     global ROIP
+    global Rotor_num
         
     Input_text = str(IT) + "1"
     
@@ -327,15 +344,16 @@ def Encode_text():
     
     a = 0
     b = int(len(ROIP)) - 2
+    Rotor_num = 0
 
     while a <= b:
         Initial_Pos = int(ROIP[a + 1])
         globals()['Rotor_X'] = 'Rotor_' + ROIP[a]
         Encode()
         Input_text_2 = Cypher_text
-
+        Rotor_num = Rotor_num + 1
         a = a + 2
-    
+        
     Encode_end = time.time()
     
     OT = Cypher_text
@@ -353,6 +371,7 @@ def Decode_text():
     global Cypher_text_2
     global Initial_Pos
     global ROIP
+    global Rotor_num
 
     Cypher_text = str(IT) + "1"
     
@@ -367,6 +386,7 @@ def Decode_text():
     
     a = int(len(ROIP))
     b = 2
+    Rotor_num = (a / 2) - 1
 
     while a >= b:
         Initial_Pos = int(ROIP[a - 1])
@@ -375,6 +395,8 @@ def Decode_text():
         Cypher_text_2 = Decoded_text
 
         a = a - 2
+        
+        Rotor_num = Rotor_num - 1
     
     Decode_end = time.time()
     
@@ -383,9 +405,9 @@ def Decode_text():
     
     print("------------------------------")
     print("Cypher text = " + IT)
-    print("Decoded text = " + OT)
+    print("Decyphered text = " + OT)
     print("Text length = %s characters" % (len(Decoded_text)))
-    print("Decode time = %s sec" % (Decode_end - Decode_start))
+    print("Decypher time = %s sec" % (Decode_end - Decode_start))
 
 #%% The big red button
    
@@ -408,7 +430,7 @@ def GO():
         Decode_text()
                 
 # Describes the button and what function it runs    
-button1 = tk.Button(root, text = 'Encode/Decode' ,command = GO, bg='brown',fg='white')
+button1 = tk.Button(root, text = 'Encode/Decypher' ,command = GO, bg='brown',fg='white')
 button1.pack()
 
 root.mainloop()
